@@ -11,7 +11,7 @@ export default function Home() {
   const [showInfo, setShowInfo] = useState(false);
   const containerRef = useRef(null);
 
-  // 1) Fetch last‑24h candles
+  // Load last‑24h candles
   useEffect(() => {
     (async () => {
       const cutoff = new Date(Date.now() - 86400_000).toISOString();
@@ -24,7 +24,7 @@ export default function Home() {
     })();
   }, []);
 
-  // 2) Center the canvas on mount
+  // Center the canvas on mount
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -34,7 +34,7 @@ export default function Home() {
     });
   }, []);
 
-  // Place new candle
+  // Place a new candle
   const handleScreenClick = async e => {
     if (!isPlacing) return setIsPlacing(false);
     setIsPlacing(false);
@@ -75,7 +75,7 @@ export default function Home() {
         />
       </Head>
 
-      {/* “light a candle . space” */}
+      {/* light a candle . space */}
       <button
         onClick={() => setShowInfo(v => !v)}
         style={{
@@ -234,7 +234,6 @@ export default function Home() {
             {[...Array(24)].map((_, i) => {
               const angle = (i / 24) * Math.PI * 2;
               const inner = 30;
-              // random outer between inner+10 and inner+40
               const outer = inner + Math.random() * 30 + 10;
               const x1 = 50 + Math.cos(angle) * inner;
               const y1 = 50 + Math.sin(angle) * inner;
@@ -247,22 +246,19 @@ export default function Home() {
                   y1={y1}
                   x2={x2}
                   y2={y2}
-                  stroke="#ddd"       {/* light grey */}
-                  strokeWidth={1}     {/* 1pt */}
+                  stroke="#ddd"
+                  strokeWidth={0.5}
                 />
               );
             })}
           </svg>
 
-          {/* candle at 60px tall */}
           <img
             src="/candle.gif"
             alt=""
             style={{ position: 'relative', height: 60, width: 'auto', zIndex: 1 }}
           />
         </div>
-
-        {/* bring text in front of rays */}
         <p
           style={{
             position: 'relative',
@@ -285,8 +281,11 @@ export default function Home() {
       {modal.open && (
         <div
           style={{
-            position: 'fixed', top: 0, left: 0,
-            width: '100vw', height: '100vh',
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
             background: 'rgba(0,0,0,0.4)',
             backdropFilter: 'blur(3px)',
             display: 'flex',
@@ -312,30 +311,40 @@ export default function Home() {
             <button
               onClick={() => setModal({ open: false, index: null, id: null, text: '' })}
               style={{
-                position: 'absolute', top: 16, right: 16,
-                width: 24, height: 24,
-                background: 'transparent', border: 'none',
-                fontSize: 20, cursor: 'pointer', color: '#666'
+                position: 'absolute',
+                top: 16,
+                right: 16,
+                width: 24,
+                height: 24,
+                background: 'transparent',
+                border: 'none',
+                fontSize: 20,
+                cursor: 'pointer',
+                color: '#666'
               }}
             >
               &times;
             </button>
 
-            <h3 style={{
-              margin: '0 0 24px',
-              fontSize: '1.3rem',
-              fontWeight: 400,
-              lineHeight: 1.3,
-              color: '#333'
-            }}>
+            <h3
+              style={{
+                margin: '0 0 24px',
+                fontSize: '1.3rem',
+                fontWeight: 400,
+                lineHeight: 1.3,
+                color: '#333'
+              }}
+            >
               Write anything you want to share with the world or let go.
             </h3>
-            <p style={{
-              margin: '0 0 32px',
-              fontSize: '0.95rem',
-              lineHeight: 1.5,
-              color: '#555'
-            }}>
+            <p
+              style={{
+                margin: '0 0 32px',
+                fontSize: '0.95rem',
+                lineHeight: 1.5,
+                color: '#555'
+              }}
+            >
               This letter cannot be deleted once you share it.
             </p>
 
@@ -360,12 +369,14 @@ export default function Home() {
                 lineHeight: 1.5
               }}
             />
-            <div style={{
-              textAlign: 'right',
-              fontSize: 13,
-              color: '#888',
-              marginBottom: 32
-            }}>
+            <div
+              style={{
+                textAlign: 'right',
+                fontSize: 13,
+                color: '#888',
+                marginBottom: 32
+              }}
+            >
               {modal.text.length}/200
             </div>
 
