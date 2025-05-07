@@ -11,7 +11,7 @@ export default function Home() {
   const [showInfo, setShowInfo] = useState(false);
   const containerRef = useRef(null);
 
-  // Load last‑24h candles
+  // 1) Fetch last‑24h candles
   useEffect(() => {
     (async () => {
       const cutoff = new Date(Date.now() - 86400_000).toISOString();
@@ -24,7 +24,7 @@ export default function Home() {
     })();
   }, []);
 
-  // Center the canvas on mount
+  // 2) Center the canvas on mount
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -34,7 +34,7 @@ export default function Home() {
     });
   }, []);
 
-  // Place a new candle
+  // Place new candle
   const handleScreenClick = async e => {
     if (!isPlacing) return setIsPlacing(false);
     setIsPlacing(false);
@@ -75,7 +75,7 @@ export default function Home() {
         />
       </Head>
 
-      {/* light a candle . space */}
+      {/* “light a candle . space” */}
       <button
         onClick={() => setShowInfo(v => !v)}
         style={{
@@ -202,7 +202,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Fixed central candle with inline random-length rays */}
+      {/* Fixed central candle with random-length rays */}
       <div
         onClick={e => {
           e.stopPropagation();
@@ -247,15 +247,32 @@ export default function Home() {
                   y1={y1}
                   x2={x2}
                   y2={y2}
-                  stroke="#ccc"
-                  strokeWidth={2}
+                  stroke="#ddd"       {/* light grey */}
+                  strokeWidth={1}     {/* 1pt */}
                 />
               );
             })}
           </svg>
-          <img src="/candle.gif" alt="" style={{ position: 'relative', height: 60, width: 'auto' }} />
+
+          {/* candle at 60px tall */}
+          <img
+            src="/candle.gif"
+            alt=""
+            style={{ position: 'relative', height: 60, width: 'auto', zIndex: 1 }}
+          />
         </div>
-        <p style={{ margin: '8px 0 0', color: '#333', fontSize: '0.95rem', lineHeight: 1.4 }}>
+
+        {/* bring text in front of rays */}
+        <p
+          style={{
+            position: 'relative',
+            zIndex: 2,
+            margin: '8px 0 0',
+            color: '#333',
+            fontSize: '0.95rem',
+            lineHeight: 1.4
+          }}
+        >
           Click to light your candle,
           <br />
           place it anywhere in this space,
@@ -268,8 +285,7 @@ export default function Home() {
       {modal.open && (
         <div
           style={{
-            position: 'fixed',
-            top: 0, left: 0,
+            position: 'fixed', top: 0, left: 0,
             width: '100vw', height: '100vh',
             background: 'rgba(0,0,0,0.4)',
             backdropFilter: 'blur(3px)',
@@ -285,7 +301,7 @@ export default function Home() {
             style={{
               position: 'relative',
               background: '#fff',
-              padding: '40px 48px', 
+              padding: '40px 48px',
               borderRadius: 10,
               width: '90%',
               maxWidth: 480,
@@ -296,16 +312,10 @@ export default function Home() {
             <button
               onClick={() => setModal({ open: false, index: null, id: null, text: '' })}
               style={{
-                position: 'absolute',
-                top: 16,
-                right: 16,
-                width: 24,
-                height: 24,
-                background: 'transparent',
-                border: 'none',
-                fontSize: 20,
-                cursor: 'pointer',
-                color: '#666'
+                position: 'absolute', top: 16, right: 16,
+                width: 24, height: 24,
+                background: 'transparent', border: 'none',
+                fontSize: 20, cursor: 'pointer', color: '#666'
               }}
             >
               &times;
