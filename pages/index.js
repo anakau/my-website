@@ -2,12 +2,23 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 
 export default function Home() {
+  // 0) Auth session
+  const [session, setSession] = useState(null);
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => setSession(session));
+    const { data: listener } = supabase.auth.onAuthStateChange((_e, sess) =>
+      setSession(sess)
+    );
+    return () => listener.subscription.unsubscribe();
+  }, []);
+
+  // 1) UI state
   const [candles, setCandles] = useState([]);
   const [isPlacing, setIsPlacing] = useState(false);
   const [modal, setModal] = useState({ open: false, index: null, id: null, text: '' });
   const [hovered, setHovered] = useState({ visible: false, x: 0, y: 0, text: '' });
 
-  // 1) Fetch only user-placed candles from the last 24 hours
+  // 2) Fetch last-24h candles
   useEffect(() => {
     (async () => {
       const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
@@ -16,74 +27,52 @@ export default function Home() {
         .select('*')
         .gte('created_at', cutoff)
         .order('created_at', { ascending: true });
-      if (!error && Array.isArray(data)) setCandles(data);
-      else if (error) console.error('Fetch error:', error);
+      if (error) console.error('Fetch error:', error);
+      else setCandles(Array.isArray(data) ? data : []);
     })();
   }, []);
 
-  // Open the letter modal
+  // 3) Place a new candle
+  const handleScreenClick = async (e) => {
+    if (!isPlacing) return;
+    setIsPlacing(false);
+
+    const x = e.clientX;
+    const y = e.clientY;
+
+    const { data, error } = await supabase
+      .from('candles')
+      .insert([{
+        x,
+        y,
+        note: '',
+        user_id: session?.user?.id   // tag with logged-in user
+      }])
+      .select();
+
+    if (error) {
+      console.error('Insert error:', error);
+    } else if (Array.isArray(data)) {
+      setCandles((prev) => [...prev, ...data]);
+    }
+  };
+
+  // 4) Open & submit letter modal
   const openModal = (idx, id) => {
     setModal({ open: true, index: idx, id, text: candles[idx].note || '' });
   };
-
-  // Submit a letter
   const handleModalSubmit = async () => {
     const { index, id, text } = modal;
-    // Optimistic UI update
-    setCandles(prev => {
+    setCandles((prev) => {
       const copy = [...prev];
       copy[index].note = text;
       return copy;
     });
-    // Persist
-    const { error } = await supabase.from('candles').update({ note: text }).eq('id', id);
+    const { error } = await supabase.from('candles')
+      .update({ note: text })
+      .eq('id', id);
     if (error) console.error('Update error:', error);
     setModal({ open: false, index: null, id: null, text: '' });
-  };
-
-// at top of your component:
-const [session, setSession] = useState(null);
-useEffect(() => {
-  supabase.auth.getSession().then(({ data: { session } }) => setSession(session));
-  supabase.auth.onAuthStateChange((_e, sess) => setSession(sess));
-}, []);
-
-// …
-
-const handleScreenClick = async (e) => {
-  if (!isPlacing) return;
-  setIsPlacing(false);
-
-  const x = e.clientX;
-  const y = e.clientY;
-  const { data, error } = await supabase
-    .from('candles')
-    .insert([{
-      x,
-      y,
-      note: '',
-      user_id: session?.user?.id    // ← tag this row with your UID
-    }])
-    .select();
-  if (!error && Array.isArray(data)) {
-    setCandles(prev => [...prev, ...data]);
-  } else {
-    console.error('Insert error:', error);
-  }
-};
-
-  // Place a new candle on click
-  const handleScreenClick = async e => {
-    if (!isPlacing) return;
-    setIsPlacing(false);
-    const x = e.clientX;
-    const y = e.clientY;
-    const { data, error } = await supabase
-      .from('candles')
-      .insert([{ x, y, note: '' }])
-      .select();
-    if (!error && Array.isArray(data)) setCandles(prev => [...prev, ...data]);
-    else if (error) console.error('Insert error:', error);
   };
 
   return (
@@ -99,9 +88,9 @@ const handleScreenClick = async (e) => {
         fontFamily: 'sans-serif',
       }}
     >
-      {/* Central Candle (always visible) */}
+      {/* Central Candle */}
       <div
-        onClick={e => {
+        onClick={(e) => {
           e.stopPropagation();
           setIsPlacing(true);
         }}
@@ -120,14 +109,14 @@ const handleScreenClick = async (e) => {
           alt="Main Candle"
           style={{ height: '120px', width: 'auto' }}
         />
-        <p>click to light your candle, place it and write a note </p>
+        <p>click to light your candle, place it and write a note</p>
       </div>
 
       {/* User-Placed Candles */}
       {candles.map((c, i) => (
         <div
           key={c.id}
-          onClick={e => {
+          onClick={(e) => {
             e.stopPropagation();
             openModal(i, c.id);
           }}
@@ -135,7 +124,7 @@ const handleScreenClick = async (e) => {
             c.note && setHovered({ visible: true, x: c.x, y: c.y, text: c.note })
           }
           onMouseLeave={() =>
-            hovered.visible && setHovered(h => ({ ...h, visible: false }))
+            setHovered((h) => ({ ...h, visible: false }))
           }
           style={{
             position: 'absolute',
@@ -203,9 +192,9 @@ const handleScreenClick = async (e) => {
             <h3 style={{ marginTop: 0 }}>Write your letter</h3>
             <textarea
               value={modal.text}
-              onChange={e => {
+              onChange={(e) => {
                 const t = e.target.value;
-                if (t.length <= 100) setModal(m => ({ ...m, text: t }));
+                if (t.length <= 100) setModal((m) => ({ ...m, text: t }));
               }}
               rows={4}
               style={{
