@@ -3,19 +3,16 @@ import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabaseClient';
 
 export default function Home() {
-  // UI state
   const [candles, setCandles] = useState([]);
   const [isPlacing, setIsPlacing] = useState(false);
   const [modal, setModal] = useState({ open: false, index: null, id: null, text: '' });
   const [hovered, setHovered] = useState({ visible: false, x: 0, y: 0, text: '' });
-
-  // Ref to the scrollable “world”
   const containerRef = useRef(null);
 
-  // Fetch last-24h candles
+  // Load recent candles
   useEffect(() => {
     (async () => {
-      const cutoff = new Date(Date.now() - 24*60*60*1000).toISOString();
+      const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
       const { data, error } = await supabase
         .from('candles')
         .select('*')
@@ -25,32 +22,25 @@ export default function Home() {
     })();
   }, []);
 
-  // Place a new candle at the click position in the “world”
+  // Place a new candle
   const handleScreenClick = async (e) => {
     if (!isPlacing) return;
     setIsPlacing(false);
-
     const container = containerRef.current;
     if (!container) return;
-
-    // Get click relative to inner world
     const rect = container.getBoundingClientRect();
     const x = e.clientX - rect.left + container.scrollLeft;
     const y = e.clientY - rect.top + container.scrollTop;
-
     const { data, error } = await supabase
       .from('candles')
       .insert([{ x, y, note: '' }])
       .select();
-
     if (!error && Array.isArray(data)) {
       setCandles(prev => [...prev, ...data]);
-    } else if (error) {
-      console.error('Insert error:', error);
     }
   };
 
-  // Open & submit letter modal
+  // Open & submit modal
   const openModal = (idx, id) => {
     setModal({ open: true, index: idx, id, text: candles[idx].note || '' });
   };
@@ -67,19 +57,20 @@ export default function Home() {
 
   return (
     <>
-      {/* 1) Scrollable world container */}
+      {/* scrollable 2D world */}
       <div
         ref={containerRef}
         onClick={handleScreenClick}
         style={{
           width: '100vw',
           height: '100vh',
-          overflow: 'auto',
-          background: '#fafafa',
+          overflowX: 'auto',
+          overflowY: 'auto',
+          backgroundColor: '#fff',
           position: 'relative'
         }}
       >
-        {/* 2) A big inner canvas (e.g. 3000×2000px) */}
+        {/* large canvas */}
         <div style={{ width: 3000, height: 2000, position: 'relative' }}>
           {candles.map((c, i) => (
             <div
@@ -91,22 +82,22 @@ export default function Home() {
                 position: 'absolute',
                 left: c.x,
                 top: c.y,
-                cursor: 'pointer',
-                transform: 'translate(-50%, -100%)'
+                transform: 'translate(-50%, -100%)',
+                cursor: 'pointer'
               }}
             >
               <img src="/candle.gif" alt="" style={{ height: 60, width: 'auto' }} />
             </div>
           ))}
 
-          {/* Hover tooltip inside the world */}
+          {/* tooltip */}
           {hovered.visible && (
             <div
               style={{
                 position: 'absolute',
                 left: hovered.x + 20,
                 top: hovered.y - 30,
-                background: 'rgba(0,0,0,0.75)',
+                backgroundColor: 'rgba(0,0,0,0.75)',
                 color: '#fff',
                 padding: '4px 8px',
                 borderRadius: 4,
@@ -122,7 +113,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* 3) Central candle stays fixed in viewport */}
+      {/* fixed central candle */}
       <div
         onClick={e => { e.stopPropagation(); setIsPlacing(true); }}
         style={{
@@ -143,7 +134,7 @@ export default function Home() {
         </p>
       </div>
 
-      {/* 4) Letter Modal */}
+      {/* letter modal */}
       {modal.open && (
         <div
           style={{
@@ -174,12 +165,7 @@ export default function Home() {
                 if (t.length <= 100) setModal(m => ({ ...m, text: t }));
               }}
               rows={4}
-              style={{
-                width: '100%',
-                boxSizing: 'border-box',
-                padding: 8,
-                fontSize: 14
-              }}
+              style={{ width: '100%', boxSizing: 'border-box', padding: 8, fontSize: 14 }}
             />
             <div style={{ textAlign: 'right', marginTop: 4, fontSize: 12, color: '#666' }}>
               {modal.text.length}/100
