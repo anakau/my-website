@@ -11,7 +11,7 @@ export default function Home() {
   const [showInfo, setShowInfo] = useState(false);
   const containerRef = useRef(null);
 
-  // Load recent candles
+  // load candles from last 24h
   useEffect(() => {
     (async () => {
       const cutoff = new Date(Date.now() - 24*60*60*1000).toISOString();
@@ -24,7 +24,7 @@ export default function Home() {
     })();
   }, []);
 
-  // Place a new candle
+  // place a new candle
   const handleScreenClick = async e => {
     if (!isPlacing) return;
     setIsPlacing(false);
@@ -40,7 +40,7 @@ export default function Home() {
     if (!error && Array.isArray(data)) setCandles(prev => [...prev, ...data]);
   };
 
-  // Modal open/submit
+  // open & submit note modal
   const openModal = (idx, id) => {
     setModal({ open: true, index: idx, id, text: candles[idx].note || '' });
   };
@@ -67,70 +67,65 @@ export default function Home() {
         />
       </Head>
 
-      {/* Light a Candle Info Button */}
+      {/* Light a Candle Button */}
       <button
         className="oooh-baby"
-        onClick={() => setShowInfo(true)}
+        onClick={() => setShowInfo(!showInfo)}
         style={{
-          position: 'fixed', top: 12, left: 12,
+          position: 'fixed',
+          top: 12,
+          left: 12,
           padding: '8px 12px',
           backgroundColor: '#d2691e',
           color: '#fff',
           border: 'none',
           borderRadius: 4,
           cursor: 'pointer',
-          zIndex: 30,
+          zIndex: 100,
         }}
       >
         Light a Candle
       </button>
 
-      {/* Info Modal */}
+      {/* Info Popover (anchored under the button) */}
       {showInfo && (
         <div
-          onClick={() => setShowInfo(false)}
           style={{
-            position: 'fixed', top: 0, left: 0,
-            width: '100vw', height: '100vh',
-            backgroundColor: 'rgba(0,0,0,0.5)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            zIndex: 40
+            position: 'fixed',
+            top: 48,
+            left: 12,
+            background: '#fff',
+            padding: 16,
+            borderRadius: 6,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+            width: 280,
+            zIndex: 100,
+            fontFamily: 'sans-serif',
           }}
         >
-          <div
-            onClick={e => e.stopPropagation()}
+          <h2 className="oooh-baby" style={{ margin: 0, marginBottom: 8, fontSize: '1.5rem' }}>
+            About This Project
+          </h2>
+          <p style={{ margin: 0, lineHeight: 1.4, fontSize: '0.9rem' }}>
+            This communal candle‐lighting app is built with Next.js and Supabase.
+            Place virtual candles across a scrollable canvas and share your messages.
+          </p>
+          <p style={{ marginTop: 12, fontStyle: 'italic', fontSize: '0.85rem' }}>
+            © 2025 Anahat Kaur
+          </p>
+          <button
+            onClick={() => setShowInfo(false)}
             style={{
-              background: '#fff',
-              padding: 20,
-              borderRadius: 8,
-              width: '90%',
-              maxWidth: 400,
-              boxShadow: '0 2px 10px rgba(0,0,0,0.2)'
+              marginTop: 8,
+              padding: '6px 10px',
+              background: '#eee',
+              border: 'none',
+              borderRadius: 4,
+              cursor: 'pointer',
             }}
           >
-            <h2 className="oooh-baby" style={{ marginTop: 0 }}>About This Project</h2>
-            <p>
-              This is a communal candle‐lighting web app built with Next.js and Supabase.
-              Place virtual candles across an infinite canvas and share your messages.
-            </p>
-            <p style={{ fontStyle: 'italic', marginTop: 12 }}>
-              © 2025 Anahat Kaur
-            </p>
-            <div style={{ textAlign: 'right', marginTop: 16 }}>
-              <button
-                onClick={() => setShowInfo(false)}
-                style={{
-                  padding: '6px 12px',
-                  border: 'none',
-                  backgroundColor: '#eee',
-                  borderRadius: 4,
-                  cursor: 'pointer'
-                }}
-              >
-                Close
-              </button>
-            </div>
-          </div>
+            Close
+          </button>
         </div>
       )}
 
@@ -139,9 +134,12 @@ export default function Home() {
         ref={containerRef}
         onClick={handleScreenClick}
         style={{
-          width: '100vw', height: '100vh',
-          overflowX: 'auto', overflowY: 'auto',
-          backgroundColor: '#fff', position: 'relative'
+          width: '100vw',
+          height: '100vh',
+          overflowX: 'auto',
+          overflowY: 'auto',
+          backgroundColor: '#fff',
+          position: 'relative',
         }}
       >
         <div style={{ width: 3000, height: 2000, position: 'relative' }}>
@@ -155,9 +153,10 @@ export default function Home() {
               onMouseLeave={() => setHovered(h => ({ ...h, visible: false }))}
               style={{
                 position: 'absolute',
-                left: c.x, top: c.y,
+                left: c.x,
+                top: c.y,
                 transform: 'translate(-50%, -100%)',
-                cursor: 'pointer'
+                cursor: 'pointer',
               }}
             >
               <img src="/candle.gif" alt="" style={{ height: 60, width: 'auto' }} />
@@ -178,7 +177,7 @@ export default function Home() {
                 pointerEvents: 'none',
                 maxWidth: 120,
                 fontSize: 12,
-                whiteSpace: 'normal'
+                whiteSpace: 'normal',
               }}
             >
               {hovered.text}
@@ -192,11 +191,12 @@ export default function Home() {
         onClick={e => { e.stopPropagation(); setIsPlacing(true); }}
         style={{
           position: 'fixed',
-          top: '50%', left: '50%',
+          top: '50%',
+          left: '50%',
           transform: 'translate(-50%, -50%)',
           textAlign: 'center',
           cursor: 'pointer',
-          zIndex: 20
+          zIndex: 50,
         }}
       >
         <img src="/candle.gif" alt="" style={{ height: 120, width: 'auto' }} />
@@ -211,11 +211,16 @@ export default function Home() {
       {modal.open && (
         <div
           style={{
-            position: 'fixed', top: 0, left: 0,
-            width: '100vw', height: '100vh',
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
             backgroundColor: 'rgba(0,0,0,0.5)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            zIndex: 30
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 200,
           }}
         >
           <div style={{
@@ -224,7 +229,7 @@ export default function Home() {
             borderRadius: 8,
             width: '90%',
             maxWidth: 400,
-            fontFamily: 'sans-serif'
+            fontFamily: 'sans-serif',
           }}>
             <h3 style={{ marginTop: 0 }}>Write your letter</h3>
             <textarea
