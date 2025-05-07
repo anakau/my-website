@@ -41,6 +41,37 @@ export default function Home() {
     setModal({ open: false, index: null, id: null, text: '' });
   };
 
+// at top of your component:
+const [session, setSession] = useState(null);
+useEffect(() => {
+  supabase.auth.getSession().then(({ data: { session } }) => setSession(session));
+  supabase.auth.onAuthStateChange((_e, sess) => setSession(sess));
+}, []);
+
+// …
+
+const handleScreenClick = async (e) => {
+  if (!isPlacing) return;
+  setIsPlacing(false);
+
+  const x = e.clientX;
+  const y = e.clientY;
+  const { data, error } = await supabase
+    .from('candles')
+    .insert([{
+      x,
+      y,
+      note: '',
+      user_id: session?.user?.id    // ← tag this row with your UID
+    }])
+    .select();
+  if (!error && Array.isArray(data)) {
+    setCandles(prev => [...prev, ...data]);
+  } else {
+    console.error('Insert error:', error);
+  }
+};
+
   // Place a new candle on click
   const handleScreenClick = async e => {
     if (!isPlacing) return;
