@@ -11,21 +11,23 @@ export default function Home() {
   const [showInfo, setShowInfo] = useState(false);
   const containerRef = useRef(null);
 
-  // load last-24h candles
+  // Load the last 24 hours of candles
   useEffect(() => {
     (async () => {
-      const cutoff = new Date(Date.now() - 86400_000).toISOString();
+      const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
       const { data, error } = await supabase
         .from('candles')
         .select('*')
         .gte('created_at', cutoff)
         .order('created_at', { ascending: true });
-      if (!error && Array.isArray(data)) setCandles(data);
+      if (!error && Array.isArray(data)) {
+        setCandles(data);
+      }
     })();
   }, []);
 
-  // place a new candle
-  const handleScreenClick = async e => {
+  // Place a new candle
+  const handleScreenClick = async (e) => {
     if (!isPlacing) return setIsPlacing(false);
     setIsPlacing(false);
     const rect = containerRef.current.getBoundingClientRect();
@@ -35,12 +37,15 @@ export default function Home() {
       .from('candles')
       .insert([{ x, y, note: '' }])
       .select();
-    if (!error && Array.isArray(data)) setCandles(prev => [...prev, ...data]);
+    if (!error && Array.isArray(data)) {
+      setCandles(prev => [...prev, ...data]);
+    }
   };
 
-  // open & submit note modal
-  const openModal = (i, id) =>
-    setModal({ open: true, index: i, id, text: candles[i].note || '' });
+  // Open & submit letter modal
+  const openModal = (idx, id) =>
+    setModal({ open: true, index: idx, id, text: candles[idx].note || '' });
+
   const handleModalSubmit = async () => {
     const { index, id, text } = modal;
     setCandles(prev => {
@@ -55,7 +60,7 @@ export default function Home() {
   return (
     <>
       <Head>
-        {/* Noto Sans for global language support */}
+        {/* Noto Sans font */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link
@@ -94,10 +99,8 @@ export default function Home() {
             onClick={() => setShowInfo(false)}
             style={{
               position: 'fixed',
-              top: 0,
-              left: 0,
-              width: '100vw',
-              height: '100vh'
+              top: 0, left: 0,
+              width: '100vw', height: '100vh'
             }}
           />
           {/* pop-over content */}
@@ -116,23 +119,22 @@ export default function Home() {
             }}
           >
             <p style={{ margin: 0 }}>
-              Prolonged war, deep loss, grief, fear, hope and eternal love. I feel
-              so much every day, especially given the state of affairs of the world.
-              This is an attempt to create a digital space for global solidarity by
-              creating a pixel of hope and accessing communal power in a small way.
-              Light a Candle is a scream into the void.
+              Prolonged war, deep loss, grief, fear, hope and eternal love. I feel so much every
+              day, especially given the state of affairs of the world. This attempt to create a
+              digital space for global solidarity by creating a pixel of hope and accessing
+              communal power in a small way. Light a Candle is a scream into the void.
             </p>
             <p style={{ margin: '12px 0 0', fontSize: '0.85rem' }}>
-              Created with ❤️ by Anahat Kaur in her little apartment in Berlin 🇩🇪
+              Created with ❤️ by Anahat Kaur in her little studio apartment in Berlin 🇩🇪
             </p>
             <p style={{ margin: '8px 0 0', fontSize: '0.85rem' }}>
-              Thanks to ChatGPT to help me code
+              Would not have been possible without ChatGPT
             </p>
           </div>
         </div>
       )}
 
-      {/* Scrollable world */}
+      {/* Scrollable 2D world */}
       <div
         ref={containerRef}
         onClick={handleScreenClick}
@@ -226,66 +228,88 @@ export default function Home() {
         </p>
       </div>
 
-      {/* Letter modal */}
+      {/* Letter Modal (calmer spacing & text) */}
       {modal.open && (
         <div
           style={{
             position: 'fixed',
-            top: 0,
-            left: 0,
-            width: '100vw',
-            height: '100vh',
-            background: 'rgba(0,0,0,0.5)',
+            top: 0, left: 0,
+            width: '100vw', height: '100vh',
+            background: 'rgba(0,0,0,0.4)',
+            backdropFilter: 'blur(3px)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             zIndex: 200
           }}
+          onClick={() => setModal({ open: false, index: null, id: null, text: '' })}
         >
           <div
+            onClick={e => e.stopPropagation()}
             style={{
               background: '#fff',
-              padding: 24,
-              borderRadius: 8,
+              padding: '40px 48px',
+              borderRadius: 10,
               width: '90%',
-              maxWidth: 420,
-              fontFamily: 'Noto Sans, sans-serif'
+              maxWidth: 480,
+              boxShadow: '0 6px 20px rgba(0,0,0,0.1)',
+              fontFamily: 'Noto Sans, sans-serif',
+              color: '#333'
             }}
           >
-            <h3 style={{ marginTop: 0, fontSize: '1.2rem' }}>Write your letter</h3>
+            <h3 style={{ margin: '0 0 24px', fontSize: '1.5rem', lineHeight: 1.3 }}>
+              Write anything you want to share with the world or let go.
+            </h3>
+            <p style={{ margin: '0 0 32px', fontSize: '1rem', lineHeight: 1.6, color: '#555' }}>
+              This letter cannot be deleted once you share it.
+            </p>
             <textarea
               value={modal.text}
               onChange={e => {
-                const t = e.target.value;
-                if (t.length <= 100) setModal(m => ({ ...m, text: t }));
+                const t = e.target.value.slice(0, 200);
+                setModal(m => ({ ...m, text: t }));
               }}
-              rows={4}
+              rows={6}
+              placeholder="Your message…"
               style={{
                 width: '100%',
-                boxSizing: 'border-box',
-                padding: 10,
-                fontSize: 14,
-                fontFamily: 'Noto Sans, sans-serif',
+                padding: '16px',
+                fontSize: 16,
+                border: '1px solid #ddd',
+                borderRadius: 6,
+                resize: 'vertical',
+                marginBottom: 24,
                 lineHeight: 1.5
               }}
             />
-            <div style={{ textAlign: 'right', marginTop: 6, fontSize: 14, color: '#666' }}>
-              {modal.text.length}/100
+            <div style={{ textAlign: 'right', fontSize: 14, color: '#888', marginBottom: 32 }}>
+              {modal.text.length}/200
             </div>
-            <div style={{ marginTop: 14, textAlign: 'right' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
               <button
                 onClick={() => setModal({ open: false, index: null, id: null, text: '' })}
                 style={{
-                  marginRight: 10,
-                  padding: '6px 12px',
-                  fontFamily: 'Noto Sans, sans-serif'
+                  padding: '10px 18px',
+                  background: '#f5f5f5',
+                  border: '1px solid #ddd',
+                  borderRadius: 6,
+                  cursor: 'pointer',
+                  fontSize: 14
                 }}
               >
                 Cancel
               </button>
               <button
                 onClick={handleModalSubmit}
-                style={{ padding: '6px 12px', fontFamily: 'Noto Sans, sans-serif' }}
+                style={{
+                  padding: '10px 18px',
+                  background: '#d2691e',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 6,
+                  cursor: 'pointer',
+                  fontSize: 14
+                }}
               >
                 Share Letter
               </button>
