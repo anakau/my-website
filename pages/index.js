@@ -11,10 +11,10 @@ export default function Home() {
   const [showInfo, setShowInfo] = useState(false);
   const containerRef = useRef(null);
 
-  // Load candles from the last 24 hours
+  // load last-24h candles
   useEffect(() => {
     (async () => {
-      const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const cutoff = new Date(Date.now() - 86400_000).toISOString();
       const { data, error } = await supabase
         .from('candles')
         .select('*')
@@ -24,9 +24,9 @@ export default function Home() {
     })();
   }, []);
 
-  // Place a new candle
+  // place a new candle
   const handleScreenClick = async e => {
-    if (!isPlacing) return;
+    if (!isPlacing) return setIsPlacing(false);
     setIsPlacing(false);
     const rect = containerRef.current.getBoundingClientRect();
     const x = e.clientX - rect.left + containerRef.current.scrollLeft;
@@ -38,9 +38,9 @@ export default function Home() {
     if (!error && Array.isArray(data)) setCandles(prev => [...prev, ...data]);
   };
 
-  // Open & submit note modal
-  const openModal = (idx, id) =>
-    setModal({ open: true, index: idx, id, text: candles[idx].note || '' });
+  // open & submit note modal
+  const openModal = (i, id) =>
+    setModal({ open: true, index: i, id, text: candles[i].note || '' });
   const handleModalSubmit = async () => {
     const { index, id, text } = modal;
     setCandles(prev => {
@@ -55,7 +55,7 @@ export default function Home() {
   return (
     <>
       <Head>
-        {/* Google Font: Noto Sans */}
+        {/* Noto Sans for global language support */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link
@@ -64,60 +64,75 @@ export default function Home() {
         />
       </Head>
 
-      {/* “Light a Candle” button */}
+      {/* Light a Candle . space button */}
       <button
-        onClick={() => setShowInfo(!showInfo)}
+        onClick={() => setShowInfo(v => !v)}
         style={{
           position: 'fixed',
           top: 12,
           left: 12,
-          padding: '10px 14px',
-          background: '#d2691e',
-          color: '#fff',
+          padding: '10px 0',
+          background: '#fff',
+          color: '#d2691e',
           border: 'none',
-          borderRadius: 4,
+          textDecoration: 'underline',
           cursor: 'pointer',
-          zIndex: 100,
+          zIndex: 101,
+          fontFamily: 'Noto Sans, sans-serif',
+          fontSize: '1rem',
+          width: 160
         }}
       >
-        Light a Candle
+        light a candle . space
       </button>
 
-      {/* Info popover */}
+      {/* Info pop-over */}
       {showInfo && (
-        <div
-          onClick={() => setShowInfo(false)}
-          style={{
-            position: 'fixed',
-            top: 48,
-            left: 12,
-            background: '#fff',
-            padding: 18,
-            borderRadius: 6,
-            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-            width: 300,
-            zIndex: 100,
-            fontFamily: 'Noto Sans, sans-serif',
-            fontSize: '1rem',
-            lineHeight: 1.5,
-          }}
-        >
-          <p style={{ margin: 0 }}>
-            Prolonged war, deep loss, grief, fear, hope and eternal love. I feel so much every
-            day, especially given the state of affairs of the world. This attempt to create a
-            digital space for global solidarity by creating a pixel of hope and accessing
-            communal power in a small way. Light a Candle is a scream into the void.
-          </p>
-          <p style={{ margin: '12px 0 0', fontStyle: 'italic' }}>
-            Created with love by Anahat Kaur in her little studio apartment in Berlin
-          </p>
-          <p style={{ margin: '8px 0 0', fontStyle: 'italic' }}>
-            Would not have been possible without ChatGPT
-          </p>
+        <div style={{ position: 'fixed', top: 48, left: 12, zIndex: 100 }}>
+          {/* backdrop to close */}
+          <div
+            onClick={() => setShowInfo(false)}
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              width: '100vw',
+              height: '100vh'
+            }}
+          />
+          {/* pop-over content */}
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: '#fff',
+              padding: 18,
+              borderRadius: 6,
+              boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+              width: 300,
+              fontFamily: 'Noto Sans, sans-serif',
+              fontSize: '1rem',
+              lineHeight: 1.5,
+              color: '#333'
+            }}
+          >
+            <p style={{ margin: 0 }}>
+              Prolonged war, deep loss, grief, fear, hope and eternal love. I feel
+              so much every day, especially given the state of affairs of the world.
+              This attempt to create a digital space for global solidarity by
+              creating a pixel of hope and accessing communal power in a small way.
+              Light a Candle is a scream into the void.
+            </p>
+            <p style={{ margin: '12px 0 0', fontSize: '0.85rem' }}>
+              Created with ❤️ by Anahat Kaur in her little studio apartment in Berlin 🇩🇪
+            </p>
+            <p style={{ margin: '8px 0 0', fontSize: '0.85rem' }}>
+              Would not have been possible without ChatGPT
+            </p>
+          </div>
         </div>
       )}
 
-      {/* Scrollable 2D world */}
+      {/* Scrollable world */}
       <div
         ref={containerRef}
         onClick={handleScreenClick}
@@ -128,6 +143,7 @@ export default function Home() {
           overflowY: 'auto',
           background: '#fff',
           position: 'relative',
+          fontFamily: 'Noto Sans, sans-serif'
         }}
       >
         <div style={{ width: 3000, height: 2000, position: 'relative' }}>
@@ -147,13 +163,12 @@ export default function Home() {
                 left: c.x,
                 top: c.y,
                 transform: 'translate(-50%, -100%)',
-                cursor: 'pointer',
+                cursor: 'pointer'
               }}
             >
               <img src="/candle.gif" alt="" style={{ height: 60, width: 'auto' }} />
             </div>
           ))}
-
           {hovered.visible && (
             <div
               style={{
@@ -168,7 +183,7 @@ export default function Home() {
                 maxWidth: 140,
                 fontFamily: 'Noto Sans, sans-serif',
                 fontSize: 14,
-                whiteSpace: 'normal',
+                whiteSpace: 'normal'
               }}
             >
               {hovered.text}
@@ -190,7 +205,7 @@ export default function Home() {
           transform: 'translate(-50%, -50%)',
           textAlign: 'center',
           cursor: 'pointer',
-          zIndex: 50,
+          zIndex: 50
         }}
       >
         <img src="/candle.gif" alt="" style={{ height: 120, width: 'auto' }} />
@@ -198,9 +213,9 @@ export default function Home() {
           style={{
             margin: '10px 0 0',
             color: '#333',
-            fontFamily: 'Noto Sans, sans-serif',
             fontSize: '1rem',
             lineHeight: 1.5,
+            fontFamily: 'Noto Sans, sans-serif'
           }}
         >
           Click to light your candle,
@@ -224,7 +239,7 @@ export default function Home() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            zIndex: 200,
+            zIndex: 200
           }}
         >
           <div
@@ -234,6 +249,7 @@ export default function Home() {
               borderRadius: 8,
               width: '90%',
               maxWidth: 420,
+              fontFamily: 'Noto Sans, sans-serif'
             }}
           >
             <h3 style={{ marginTop: 0, fontSize: '1.2rem' }}>Write your letter</h3>
@@ -250,7 +266,7 @@ export default function Home() {
                 padding: 10,
                 fontSize: 14,
                 fontFamily: 'Noto Sans, sans-serif',
-                lineHeight: 1.5,
+                lineHeight: 1.5
               }}
             />
             <div style={{ textAlign: 'right', marginTop: 6, fontSize: 14, color: '#666' }}>
@@ -259,26 +275,24 @@ export default function Home() {
             <div style={{ marginTop: 14, textAlign: 'right' }}>
               <button
                 onClick={() => setModal({ open: false, index: null, id: null, text: '' })}
-                style={{ marginRight: 10, padding: '6px 12px', fontFamily: 'Noto Sans, sans-serif' }}
+                style={{
+                  marginRight: 10,
+                  padding: '6px 12px',
+                  fontFamily: 'Noto Sans, sans-serif'
+                }}
               >
                 Cancel
               </button>
-              <button onClick={handleModalSubmit} style={{ padding: '6px 12px', fontFamily: 'Noto Sans, sans-serif' }}>
+              <button
+                onClick={handleModalSubmit}
+                style={{ padding: '6px 12px', fontFamily: 'Noto Sans, sans-serif' }}
+              >
                 Share Letter
               </button>
             </div>
           </div>
         </div>
       )}
-
-      {/* Global styles */}
-      <style jsx global>{`
-        body {
-          margin: 0;
-          background: #fff;
-          font-family: 'Noto Sans', sans-serif;
-        }
-      `}</style>
     </>
   );
 }
