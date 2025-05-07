@@ -11,7 +11,7 @@ export default function Home() {
   const [showInfo, setShowInfo] = useState(false);
   const containerRef = useRef(null);
 
-  // Load the last 24h of candles
+  // Fetch last‐24h candles
   useEffect(() => {
     (async () => {
       const cutoff = new Date(Date.now() - 86400_000).toISOString();
@@ -24,7 +24,7 @@ export default function Home() {
     })();
   }, []);
 
-  // Auto-center the scrollable canvas
+  // Center the canvas
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -48,9 +48,9 @@ export default function Home() {
     if (!error && Array.isArray(data)) setCandles(prev => [...prev, ...data]);
   };
 
-  // Open and handle the letter modal
-  const openModal = (idx, id) =>
-    setModal({ open: true, index: idx, id, text: candles[idx].note || '' });
+  // Letter modal
+  const openModal = (i, id) =>
+    setModal({ open: true, index: i, id, text: candles[i].note || '' });
 
   const handleModalSubmit = async () => {
     const { index, id, text } = modal;
@@ -66,7 +66,7 @@ export default function Home() {
   return (
     <>
       <Head>
-        {/* Noto Sans for global use */}
+        {/* Noto Sans */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link
@@ -75,23 +75,17 @@ export default function Home() {
         />
       </Head>
 
-      {/* “light a candle . space” button */}
+      {/* “light a candle . space” */}
       <button
         onClick={() => setShowInfo(v => !v)}
         style={{
           position: 'fixed',
-          top: 12,
-          left: 12,
-          width: 160,
-          padding: '10px 0',
-          background: '#fff',
-          color: '#d2691e',
-          border: 'none',
-          textDecoration: 'underline',
-          cursor: 'pointer',
-          fontFamily: 'Noto Sans, sans-serif',
-          fontSize: '1rem',
-          zIndex: 101
+          top: 12, left: 12,
+          width: 160, padding: '10px 0',
+          background: '#fff', color: '#d2691e',
+          border: 'none', textDecoration: 'underline',
+          cursor: 'pointer', zIndex: 101,
+          fontFamily: 'Noto Sans, sans-serif', fontSize: '1rem'
         }}
       >
         light a candle . space
@@ -107,15 +101,10 @@ export default function Home() {
           <div
             onClick={e => e.stopPropagation()}
             style={{
-              background: '#fff',
-              padding: 18,
-              borderRadius: 6,
-              boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-              width: 300,
-              fontFamily: 'Noto Sans, sans-serif',
-              fontSize: '0.95rem',
-              lineHeight: 1.4,
-              color: '#333'
+              background: '#fff', padding: 18, borderRadius: 6,
+              boxShadow: '0 2px 8px rgba(0,0,0,0.15)', width: 300,
+              fontFamily: 'Noto Sans, sans-serif', fontSize: '0.95rem',
+              lineHeight: 1.4, color: '#333'
             }}
           >
             <p style={{ margin: 0 }}>
@@ -134,17 +123,14 @@ export default function Home() {
         </div>
       )}
 
-      {/* Scrollable canvas */}
+      {/* Scrollable world */}
       <div
         ref={containerRef}
         onClick={handleScreenClick}
         style={{
-          width: '100vw',
-          height: '100vh',
-          overflow: 'auto',
-          background: '#fff',
-          position: 'relative',
-          fontFamily: 'Noto Sans, sans-serif'
+          width: '100vw', height: '100vh',
+          overflow: 'auto', background: '#fff',
+          position: 'relative', fontFamily: 'Noto Sans, sans-serif'
         }}
       >
         <div style={{ width: 3000, height: 2000, position: 'relative' }}>
@@ -178,7 +164,7 @@ export default function Home() {
             </div>
           ))}
 
-          {/* Tooltip */}
+          {/* Tooltip with date */}
           {hovered.visible && (
             <div
               style={{
@@ -202,7 +188,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Fixed central candle */}
+      {/* Fixed central candle + embedded burst SVG */}
       <div
         onClick={e => {
           e.stopPropagation();
@@ -218,21 +204,48 @@ export default function Home() {
           zIndex: 50
         }}
       >
-        <img src="/candle.gif" alt="" style={{ height: 120, width: 'auto' }} />
-        <p
-          style={{
-            margin: '10px 0 0',
-            color: '#333',
-            fontSize: '0.95rem',
-            lineHeight: 1.4
-          }}
-        >
-          Click to light your candle,
-          <br />
-          place it anywhere in this space,
-          <br />
-          write a note or read one.
-        </p>
+        <div style={{ position: 'relative', width: 60, height: 60, margin: '0 auto' }}>
+          {/* Inline sunburst */}
+          <svg
+            viewBox="0 0 100 100"
+            style={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%,-50%)',
+              width: 140,
+              height: 140,
+              pointerEvents: 'none'
+            }}
+          >
+            <circle cx="50" cy="50" r="20" fill="none" stroke="#ccc" strokeWidth="2" />
+            {[...Array(24)].map((_, i) => {
+              const angle = (i / 24) * Math.PI * 2;
+              const x1 = 50 + Math.cos(angle) * 30;
+              const y1 = 50 + Math.sin(angle) * 30;
+              const x2 = 50 + Math.cos(angle) * 45;
+              const y2 = 50 + Math.sin(angle) * 45;
+              return (
+                <line
+                  key={i}
+                  x1={x1}
+                  y1={y1}
+                  x2={x2}
+                  y2={y2}
+                  stroke="#ccc"
+                  strokeWidth={i % 2 === 0 ? 2 : 1}
+                />
+              );
+            })}
+          </svg>
+
+          {/* Candle itself */}
+          <img
+            src="/candle.gif"
+            alt=""
+            style={{ position: 'relative', height: 60, width: 'auto' }}
+          />
+        </div>
       </div>
 
       {/* Letter Modal */}
@@ -240,10 +253,8 @@ export default function Home() {
         <div
           style={{
             position: 'fixed',
-            top: 0,
-            left: 0,
-            width: '100vw',
-            height: '100vh',
+            top: 0, left: 0,
+            width: '100vw', height: '100vh',
             background: 'rgba(0,0,0,0.4)',
             backdropFilter: 'blur(3px)',
             display: 'flex',
@@ -284,25 +295,21 @@ export default function Home() {
               &times;
             </button>
 
-            <h3
-              style={{
-                margin: '0 0 24px',
-                fontSize: '1.3rem',
-                fontWeight: 400,
-                lineHeight: 1.3,
-                color: '#333'
-              }}
-            >
+            <h3 style={{
+              margin: '0 0 24px',
+              fontSize: '1.3rem',
+              fontWeight: 400,
+              lineHeight: 1.3,
+              color: '#333'
+            }}>
               Write anything you want to share with the world or let go.
             </h3>
-            <p
-              style={{
-                margin: '0 0 32px',
-                fontSize: '0.95rem',
-                lineHeight: 1.5,
-                color: '#555'
-              }}
-            >
+            <p style={{
+              margin: '0 0 32px',
+              fontSize: '0.95rem',
+              lineHeight: 1.5,
+              color: '#555'
+            }}>
               This letter cannot be deleted once you share it.
             </p>
 
@@ -321,20 +328,18 @@ export default function Home() {
                 border: '1px solid #eee',
                 borderRadius: 6,
                 backgroundColor: '#f9f9f9',
-                color: '#000',            // ensure typed text is black
+                color: '#000', 
                 resize: 'vertical',
                 marginBottom: 32,
                 lineHeight: 1.5
               }}
             />
-            <div
-              style={{
-                textAlign: 'right',
-                fontSize: 13,
-                color: '#888',
-                marginBottom: 32
-              }}
-            >
+            <div style={{
+              textAlign: 'right',
+              fontSize: 13,
+              color: '#888',
+              marginBottom: 32
+            }}>
               {modal.text.length}/200
             </div>
 
