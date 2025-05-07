@@ -11,7 +11,7 @@ export default function Home() {
   const [showInfo, setShowInfo] = useState(false);
   const containerRef = useRef(null);
 
-  // Fetch last‐24h candles
+  // Load last‑24h candles
   useEffect(() => {
     (async () => {
       const cutoff = new Date(Date.now() - 86400_000).toISOString();
@@ -24,7 +24,7 @@ export default function Home() {
     })();
   }, []);
 
-  // Center the canvas
+  // Center the canvas on mount
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -48,7 +48,7 @@ export default function Home() {
     if (!error && Array.isArray(data)) setCandles(prev => [...prev, ...data]);
   };
 
-  // Letter modal
+  // Open & submit letter modal
   const openModal = (i, id) =>
     setModal({ open: true, index: i, id, text: candles[i].note || '' });
 
@@ -75,17 +75,23 @@ export default function Home() {
         />
       </Head>
 
-      {/* “light a candle . space” */}
+      {/* light a candle . space */}
       <button
         onClick={() => setShowInfo(v => !v)}
         style={{
           position: 'fixed',
-          top: 12, left: 12,
-          width: 160, padding: '10px 0',
-          background: '#fff', color: '#d2691e',
-          border: 'none', textDecoration: 'underline',
-          cursor: 'pointer', zIndex: 101,
-          fontFamily: 'Noto Sans, sans-serif', fontSize: '1rem'
+          top: 12,
+          left: 12,
+          width: 160,
+          padding: '10px 0',
+          background: '#fff',
+          color: '#d2691e',
+          border: 'none',
+          textDecoration: 'underline',
+          cursor: 'pointer',
+          fontFamily: 'Noto Sans, sans-serif',
+          fontSize: '1rem',
+          zIndex: 101
         }}
       >
         light a candle . space
@@ -101,10 +107,15 @@ export default function Home() {
           <div
             onClick={e => e.stopPropagation()}
             style={{
-              background: '#fff', padding: 18, borderRadius: 6,
-              boxShadow: '0 2px 8px rgba(0,0,0,0.15)', width: 300,
-              fontFamily: 'Noto Sans, sans-serif', fontSize: '0.95rem',
-              lineHeight: 1.4, color: '#333'
+              background: '#fff',
+              padding: 18,
+              borderRadius: 6,
+              boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+              width: 300,
+              fontFamily: 'Noto Sans, sans-serif',
+              fontSize: '0.95rem',
+              lineHeight: 1.4,
+              color: '#333'
             }}
           >
             <p style={{ margin: 0 }}>
@@ -128,9 +139,12 @@ export default function Home() {
         ref={containerRef}
         onClick={handleScreenClick}
         style={{
-          width: '100vw', height: '100vh',
-          overflow: 'auto', background: '#fff',
-          position: 'relative', fontFamily: 'Noto Sans, sans-serif'
+          width: '100vw',
+          height: '100vh',
+          overflow: 'auto',
+          background: '#fff',
+          position: 'relative',
+          fontFamily: 'Noto Sans, sans-serif'
         }}
       >
         <div style={{ width: 3000, height: 2000, position: 'relative' }}>
@@ -164,7 +178,7 @@ export default function Home() {
             </div>
           ))}
 
-          {/* Tooltip with date */}
+          {/* Tooltip */}
           {hovered.visible && (
             <div
               style={{
@@ -188,7 +202,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Fixed central candle + embedded burst SVG */}
+      {/* Fixed central candle with inline random-length rays */}
       <div
         onClick={e => {
           e.stopPropagation();
@@ -205,7 +219,6 @@ export default function Home() {
         }}
       >
         <div style={{ position: 'relative', width: 60, height: 60, margin: '0 auto' }}>
-          {/* Inline sunburst */}
           <svg
             viewBox="0 0 100 100"
             style={{
@@ -218,13 +231,15 @@ export default function Home() {
               pointerEvents: 'none'
             }}
           >
-            <circle cx="50" cy="50" r="20" fill="none" stroke="#ccc" strokeWidth="2" />
             {[...Array(24)].map((_, i) => {
               const angle = (i / 24) * Math.PI * 2;
-              const x1 = 50 + Math.cos(angle) * 30;
-              const y1 = 50 + Math.sin(angle) * 30;
-              const x2 = 50 + Math.cos(angle) * 45;
-              const y2 = 50 + Math.sin(angle) * 45;
+              const inner = 30;
+              // random outer between inner+10 and inner+40
+              const outer = inner + Math.random() * 30 + 10;
+              const x1 = 50 + Math.cos(angle) * inner;
+              const y1 = 50 + Math.sin(angle) * inner;
+              const x2 = 50 + Math.cos(angle) * outer;
+              const y2 = 50 + Math.sin(angle) * outer;
               return (
                 <line
                   key={i}
@@ -233,19 +248,20 @@ export default function Home() {
                   x2={x2}
                   y2={y2}
                   stroke="#ccc"
-                  strokeWidth={i % 2 === 0 ? 2 : 1}
+                  strokeWidth={2}
                 />
               );
             })}
           </svg>
-
-          {/* Candle itself */}
-          <img
-            src="/candle.gif"
-            alt=""
-            style={{ position: 'relative', height: 60, width: 'auto' }}
-          />
+          <img src="/candle.gif" alt="" style={{ position: 'relative', height: 60, width: 'auto' }} />
         </div>
+        <p style={{ margin: '8px 0 0', color: '#333', fontSize: '0.95rem', lineHeight: 1.4 }}>
+          Click to light your candle,
+          <br />
+          place it anywhere in this space,
+          <br />
+          write a note or read one.
+        </p>
       </div>
 
       {/* Letter Modal */}
@@ -269,7 +285,7 @@ export default function Home() {
             style={{
               position: 'relative',
               background: '#fff',
-              padding: '40px 48px',
+              padding: '40px 48px', 
               borderRadius: 10,
               width: '90%',
               maxWidth: 480,
@@ -328,7 +344,7 @@ export default function Home() {
                 border: '1px solid #eee',
                 borderRadius: 6,
                 backgroundColor: '#f9f9f9',
-                color: '#000', 
+                color: '#000',
                 resize: 'vertical',
                 marginBottom: 32,
                 lineHeight: 1.5
