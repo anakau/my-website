@@ -89,7 +89,7 @@ export default function Home() {
           alt="Main Candle"
           style={{ height: '120px', width: 'auto' }}
         />
-        <p>click to light your candle, place it elsewhere and write a note </p>
+        <p>click to light your candle, place it and write a note </p>
       </div>
 
       {/* User-Placed Candles */}
