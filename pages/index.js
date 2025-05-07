@@ -126,7 +126,7 @@ export default function Home() {
               Created with ❤️ by Anahat Kaur in her little apartment in Berlin 🇩🇪
             </p>
             <p style={{ margin: '8px 0 0', fontSize: '0.85rem' }}>
-              Thanks to the powers of Ai to make this possible
+              Thanks to ChatGPT to help me code
             </p>
           </div>
         </div>
