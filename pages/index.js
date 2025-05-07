@@ -1,8 +1,9 @@
+// pages/index.js
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 
 export default function Home() {
-  // —————————— AUTH SESSION ——————————
+  // —————————— 0) Auth session ——————————
   const [session, setSession] = useState(null);
   useEffect(() => {
     (async () => {
@@ -11,30 +12,19 @@ export default function Home() {
       } = await supabase.auth.getSession();
       setSession(session);
     })();
-
-    const { subscription } = supabase.auth.onAuthStateChange((_event, sess) => {
+    const { subscription } = supabase.auth.onAuthStateChange((_e, sess) => {
       setSession(sess);
     });
     return () => subscription.unsubscribe();
   }, []);
 
-  // —————————— UI STATE ——————————
+  // —————————— 1) UI state ——————————
   const [candles, setCandles] = useState([]);
   const [isPlacing, setIsPlacing] = useState(false);
-  const [modal, setModal] = useState({
-    open: false,
-    index: null,
-    id: null,
-    text: '',
-  });
-  const [hovered, setHovered] = useState({
-    visible: false,
-    x: 0,
-    y: 0,
-    text: '',
-  });
+  const [modal, setModal] = useState({ open: false, index: null, id: null, text: '' });
+  const [hovered, setHovered] = useState({ visible: false, x: 0, y: 0, text: '' });
 
-  // —————————— FETCH LAST 24h CANDLES ——————————
+  // —————————— 2) Fetch last-24h candles ——————————
   useEffect(() => {
     (async () => {
       const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
@@ -43,36 +33,34 @@ export default function Home() {
         .select('*')
         .gte('created_at', cutoff)
         .order('created_at', { ascending: true });
-
-      if (error) return console.error('Fetch error:', error);
-      setCandles(Array.isArray(data) ? data : []);
+      if (error) {
+        console.error('Fetch error:', error);
+      } else {
+        setCandles(Array.isArray(data) ? data : []);
+      }
     })();
   }, []);
 
-  // —————————— PLACE NEW CANDLE ——————————
+  // —————————— 3) Place a new candle ——————————
   const handleScreenClick = async (e) => {
     if (!isPlacing) return;
     setIsPlacing(false);
 
-    // ensure we have a logged-in session
     if (!session?.user?.id) {
-      console.warn('No session, cannot tag user_id');
+      console.warn('You must be signed in to place a candle');
       return;
     }
 
     const x = e.clientX;
     const y = e.clientY;
-
     const { data, error } = await supabase
       .from('candles')
-      .insert([
-        {
-          x,
-          y,
-          note: '',
-          user_id: session.user.id, // <<— tag with user
-        },
-      ])
+      .insert([{
+        x,
+        y,
+        note: '',
+        user_id: session.user.id,
+      }])
       .select();
 
     if (error) {
@@ -82,32 +70,24 @@ export default function Home() {
     }
   };
 
-  // —————————— OPEN & SUBMIT LETTER MODAL ——————————
+  // —————————— 4) Open & submit letter modal ——————————
   const openModal = (idx, id) => {
-    setModal({
-      open: true,
-      index: idx,
-      id,
-      text: candles[idx].note || '',
-    });
+    setModal({ open: true, index: idx, id, text: candles[idx].note || '' });
   };
-
   const handleModalSubmit = async () => {
     const { index, id, text } = modal;
-    // optimistic UI
+    // Optimistic update
     setCandles((prev) => {
       const copy = [...prev];
       copy[index].note = text;
       return copy;
     });
-
+    // Persist
     const { error } = await supabase
       .from('candles')
       .update({ note: text })
       .eq('id', id);
-
     if (error) console.error('Update error:', error);
-
     setModal({ open: false, index: null, id: null, text: '' });
   };
 
@@ -124,7 +104,7 @@ export default function Home() {
         fontFamily: 'sans-serif',
       }}
     >
-      {/* Central Candle */}
+      {/* Central Candle (always visible) */}
       <div
         onClick={(e) => {
           e.stopPropagation();
@@ -145,10 +125,14 @@ export default function Home() {
           alt="Main Candle"
           style={{ height: '120px', width: 'auto' }}
         />
-        <p>Click to light your candle <br> place it elsewhere <br> write a note</p>
+        <p>
+          Click to light your candle,<br/>
+          place it elsewhere,<br/>
+          write a note.
+        </p>
       </div>
 
-      {/* Placed Candles */}
+      {/* User-Placed Candles */}
       {candles.map((c, i) => (
         <div
           key={c.id}
