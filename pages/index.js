@@ -129,9 +129,6 @@ export default function Home() {
             <p style={{ margin: '12px 0 0', fontSize: '0.8rem', color: '#555' }}>
               Created with ❤️ by Anahat Kaur in her little studio apartment in Berlin 🇩🇪
             </p>
-            <p style={{ margin: '6px 0 0', fontSize: '0.8rem', color: '#555' }}>
-              Would not have been possible without ChatGPT
-            </p>
           </div>
         </div>
       )}
