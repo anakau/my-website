@@ -11,28 +11,39 @@ export default function Home() {
   const [showInfo, setShowInfo] = useState(false);
   const containerRef = useRef(null);
 
-  // Load the last 24 hours of candles
+  // 1) Load last‑24h candles
   useEffect(() => {
     (async () => {
-      const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const cutoff = new Date(Date.now() - 86400_000).toISOString();
       const { data, error } = await supabase
         .from('candles')
         .select('*')
         .gte('created_at', cutoff)
         .order('created_at', { ascending: true });
-      if (!error && Array.isArray(data)) {
-        setCandles(data);
-      }
+      if (!error && Array.isArray(data)) setCandles(data);
     })();
   }, []);
 
+  // 2) Center the scrollable container on mount
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    // Wait a tick for layout
+    requestAnimationFrame(() => {
+      const centerX = (el.scrollWidth - el.clientWidth) / 2;
+      const centerY = (el.scrollHeight - el.clientHeight) / 2;
+      el.scrollLeft = centerX;
+      el.scrollTop  = centerY;
+    });
+  }, [containerRef.current]);
+
   // Place a new candle
-  const handleScreenClick = async (e) => {
+  const handleScreenClick = async e => {
     if (!isPlacing) return setIsPlacing(false);
     setIsPlacing(false);
     const rect = containerRef.current.getBoundingClientRect();
     const x = e.clientX - rect.left + containerRef.current.scrollLeft;
-    const y = e.clientY - rect.top + containerRef.current.scrollTop;
+    const y = e.clientY - rect.top  + containerRef.current.scrollTop;
     const { data, error } = await supabase
       .from('candles')
       .insert([{ x, y, note: '' }])
@@ -60,132 +71,92 @@ export default function Home() {
   return (
     <>
       <Head>
-        {/* Noto Sans font */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+        {/* Noto Sans */}
+        <link rel="preconnect" href="https://fonts.googleapis.com"/>
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin=""/>
         <link
           href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700&display=swap"
           rel="stylesheet"
         />
       </Head>
 
-      {/* Light a Candle . space button */}
+      {/* Light a Candle . space */}
       <button
         onClick={() => setShowInfo(v => !v)}
         style={{
-          position: 'fixed',
-          top: 12,
-          left: 12,
-          padding: '10px 0',
-          background: '#fff',
-          color: '#d2691e',
-          border: 'none',
-          textDecoration: 'underline',
-          cursor: 'pointer',
-          zIndex: 101,
-          fontFamily: 'Noto Sans, sans-serif',
-          fontSize: '1rem',
-          width: 160
+          position: 'fixed', top: 12, left: 12,
+          width: 160, padding: '10px 0',
+          background: '#fff', color: '#d2691e',
+          border: 'none', textDecoration: 'underline',
+          cursor: 'pointer', zIndex: 101,
+          fontFamily: 'Noto Sans, sans-serif', fontSize: '1rem'
         }}
       >
         light a candle . space
       </button>
 
-      {/* Info pop-over */}
+      {/* Info pop‑over */}
       {showInfo && (
         <div style={{ position: 'fixed', top: 48, left: 12, zIndex: 100 }}>
-          {/* backdrop to close */}
           <div
             onClick={() => setShowInfo(false)}
-            style={{
-              position: 'fixed',
-              top: 0, left: 0,
-              width: '100vw', height: '100vh'
-            }}
+            style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh' }}
           />
-          {/* pop-over content */}
           <div
             onClick={e => e.stopPropagation()}
             style={{
-              background: '#fff',
-              padding: 18,
-              borderRadius: 6,
-              boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-              width: 300,
-              fontFamily: 'Noto Sans, sans-serif',
-              fontSize: '1rem',
-              lineHeight: 1.5,
-              color: '#333'
+              background: '#fff', padding: 18, borderRadius: 6,
+              boxShadow: '0 2px 8px rgba(0,0,0,0.15)', width: 300,
+              fontFamily: 'Noto Sans, sans-serif', fontSize: '0.95rem',
+              lineHeight: 1.4, color: '#333'
             }}
           >
-            <p style={{ margin: 0 }}>
+            <p style={{margin:0}}>
               Prolonged war, deep loss, grief, fear, hope and eternal love. I feel so much every
               day, especially given the state of affairs of the world. This attempt to create a
               digital space for global solidarity by creating a pixel of hope and accessing
               communal power in a small way. Light a Candle is a scream into the void.
             </p>
-            <p style={{ margin: '12px 0 0', fontSize: '0.85rem' }}>
+            <p style={{margin:'12px 0 0', fontSize:'0.8rem', fontWeight:400, color:'#555'}}>
               Created with ❤️ by Anahat Kaur in her little studio apartment in Berlin 🇩🇪
             </p>
-            <p style={{ margin: '8px 0 0', fontSize: '0.85rem' }}>
+            <p style={{margin:'6px 0 0',  fontSize:'0.8rem', fontWeight:400, color:'#555'}}>
               Would not have been possible without ChatGPT
             </p>
           </div>
         </div>
       )}
 
-      {/* Scrollable 2D world */}
+      {/* Scrollable world */}
       <div
         ref={containerRef}
         onClick={handleScreenClick}
         style={{
-          width: '100vw',
-          height: '100vh',
-          overflowX: 'auto',
-          overflowY: 'auto',
-          background: '#fff',
-          position: 'relative',
-          fontFamily: 'Noto Sans, sans-serif'
+          width:'100vw', height:'100vh',
+          overflow:'auto', background:'#fff',
+          position:'relative', fontFamily:'Noto Sans, sans-serif'
         }}
       >
-        <div style={{ width: 3000, height: 2000, position: 'relative' }}>
-          {candles.map((c, i) => (
+        <div style={{ width:3000, height:2000, position:'relative' }}>
+          {candles.map((c,i) => (
             <div
               key={c.id}
-              onClick={e => {
-                e.stopPropagation();
-                openModal(i, c.id);
-              }}
-              onMouseEnter={() =>
-                c.note && setHovered({ visible: true, x: c.x, y: c.y, text: c.note })
-              }
-              onMouseLeave={() => setHovered(h => ({ ...h, visible: false }))}
-              style={{
-                position: 'absolute',
-                left: c.x,
-                top: c.y,
-                transform: 'translate(-50%, -100%)',
-                cursor: 'pointer'
-              }}
+              onClick={e => { e.stopPropagation(); openModal(i,c.id) }}
+              onMouseEnter={() => c.note && setHovered({ visible:true, x:c.x, y:c.y, text:c.note })}
+              onMouseLeave={() => setHovered(h=>({...h,visible:false}))}
+              style={{ position:'absolute', left:c.x, top:c.y, transform:'translate(-50%,-100%)', cursor:'pointer' }}
             >
-              <img src="/candle.gif" alt="" style={{ height: 60, width: 'auto' }} />
+              <img src="/candle.gif" alt="" style={{height:60,width:'auto'}}/>
             </div>
           ))}
           {hovered.visible && (
             <div
               style={{
-                position: 'absolute',
-                left: hovered.x + 20,
-                top: hovered.y - 30,
-                background: 'rgba(0,0,0,0.75)',
-                color: '#fff',
-                padding: '6px 10px',
-                borderRadius: 4,
-                pointerEvents: 'none',
-                maxWidth: 140,
-                fontFamily: 'Noto Sans, sans-serif',
-                fontSize: 14,
-                whiteSpace: 'normal'
+                position:'absolute', left:hovered.x+20, top:hovered.y-30,
+                background:'rgba(0,0,0,0.75)', color:'#fff',
+                padding:'6px 10px', borderRadius:4,
+                pointerEvents:'none', maxWidth:140,
+                fontSize:13, lineHeight:1.4
               }}
             >
               {hovered.text}
@@ -196,124 +167,121 @@ export default function Home() {
 
       {/* Fixed central candle */}
       <div
-        onClick={e => {
-          e.stopPropagation();
-          setIsPlacing(true);
-        }}
+        onClick={e=>{e.stopPropagation(); setIsPlacing(true)}}
         style={{
-          position: 'fixed',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          textAlign: 'center',
-          cursor: 'pointer',
-          zIndex: 50
+          position:'fixed', top:'50%', left:'50%',
+          transform:'translate(-50%,-50%)',
+          textAlign:'center', cursor:'pointer', zIndex:50
         }}
       >
-        <img src="/candle.gif" alt="" style={{ height: 120, width: 'auto' }} />
-        <p
-          style={{
-            margin: '10px 0 0',
-            color: '#333',
-            fontSize: '1rem',
-            lineHeight: 1.5,
-            fontFamily: 'Noto Sans, sans-serif'
-          }}
-        >
-          Click to light your candle,
-          <br />
-          place it anywhere in this space,
-          <br />
+        <img src="/candle.gif" alt="" style={{height:120,width:'auto'}}/>
+        <p style={{
+          margin:'10px 0 0', color:'#333',
+          fontSize:'0.95rem', lineHeight:1.4
+        }}>
+          Click to light your candle,<br/>
+          place it anywhere in this space,<br/>
           write a note or read one.
         </p>
       </div>
 
-      {/* Letter Modal (calmer spacing & text) */}
+      {/* Letter Modal (calmer, centered on open) */}
       {modal.open && (
         <div
           style={{
-            position: 'fixed',
-            top: 0, left: 0,
-            width: '100vw', height: '100vh',
-            background: 'rgba(0,0,0,0.4)',
-            backdropFilter: 'blur(3px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 200
+            position:'fixed', top:0, left:0,
+            width:'100vw', height:'100vh',
+            background:'rgba(0,0,0,0.4)', backdropFilter:'blur(3px)',
+            display:'flex', alignItems:'center', justifyContent:'center', zIndex:200
           }}
-          onClick={() => setModal({ open: false, index: null, id: null, text: '' })}
+          onClick={()=>setModal({open:false,index:null,id:null,text:''})}
         >
           <div
-            onClick={e => e.stopPropagation()}
+            onClick={e=>e.stopPropagation()}
             style={{
-              background: '#fff',
-              padding: '40px 48px',
-              borderRadius: 10,
-              width: '90%',
-              maxWidth: 480,
-              boxShadow: '0 6px 20px rgba(0,0,0,0.1)',
-              fontFamily: 'Noto Sans, sans-serif',
-              color: '#333'
+              position:'relative',
+              background:'#fff',
+              padding:'40px 48px',
+              borderRadius:10,
+              width:'90%', maxWidth:480,
+              boxShadow:'0 6px 20px rgba(0,0,0,0.1)'
             }}
           >
-            <h3 style={{ margin: '0 0 24px', fontSize: '1.5rem', lineHeight: 1.3 }}>
+            {/* Close × */}
+            <button
+              onClick={()=>setModal({open:false,index:null,id:null,text:''})}
+              style={{
+                position:'absolute', top:16, right:16,
+                width:24, height:24,
+                background:'transparent', border:'none',
+                fontSize:20, cursor:'pointer', color:'#666'
+              }}
+            >
+              &times;
+            </button>
+
+            <h3 style={{
+              margin:'0 0 24px',
+              fontSize:'1.3rem',
+              fontWeight:400,
+              lineHeight:1.3,
+              color:'#333'
+            }}>
               Write anything you want to share with the world or let go.
             </h3>
-            <p style={{ margin: '0 0 32px', fontSize: '1rem', lineHeight: 1.6, color: '#555' }}>
+            <p style={{
+              margin:'0 0 32px',
+              fontSize:'0.95rem',
+              lineHeight:1.5,
+              color:'#555'
+            }}>
               This letter cannot be deleted once you share it.
             </p>
+
             <textarea
               value={modal.text}
-              onChange={e => {
-                const t = e.target.value.slice(0, 200);
-                setModal(m => ({ ...m, text: t }));
+              onChange={e=>{
+                const t=e.target.value.slice(0,200);
+                setModal(m=>({...m,text:t}));
               }}
               rows={6}
               placeholder="Your message…"
               style={{
-                width: '100%',
-                padding: '16px',
-                fontSize: 16,
-                border: '1px solid #ddd',
-                borderRadius: 6,
-                resize: 'vertical',
-                marginBottom: 24,
-                lineHeight: 1.5
+                width:'100%',
+                padding:'16px',
+                fontSize:15,
+                border:'1px solid #eee',
+                borderRadius:6,
+                backgroundColor:'#f9f9f9',
+                resize:'vertical',
+                marginBottom:32,
+                lineHeight:1.5
               }}
             />
-            <div style={{ textAlign: 'right', fontSize: 14, color: '#888', marginBottom: 32 }}>
+            <div style={{
+              textAlign:'right',
+              fontSize:13,
+              color:'#888',
+              marginBottom:32
+            }}>
               {modal.text.length}/200
             </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
-              <button
-                onClick={() => setModal({ open: false, index: null, id: null, text: '' })}
-                style={{
-                  padding: '10px 18px',
-                  background: '#f5f5f5',
-                  border: '1px solid #ddd',
-                  borderRadius: 6,
-                  cursor: 'pointer',
-                  fontSize: 14
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleModalSubmit}
-                style={{
-                  padding: '10px 18px',
-                  background: '#d2691e',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: 6,
-                  cursor: 'pointer',
-                  fontSize: 14
-                }}
-              >
-                Share Letter
-              </button>
-            </div>
+
+            <button
+              onClick={handleModalSubmit}
+              style={{
+                padding:'10px 18px',
+                background:'#fff',
+                color:'#d2691e',
+                border:'1px solid #d2691e',
+                borderRadius:6,
+                cursor:'pointer',
+                fontSize:14,
+                float:'right'
+              }}
+            >
+              Share Letter
+            </button>
           </div>
         </div>
       )}
