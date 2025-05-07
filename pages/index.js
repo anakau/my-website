@@ -3,28 +3,41 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 
 export default function Home() {
-  // —————————— 0) Auth session ——————————
+  // ————— 1) Auth & session —————
   const [session, setSession] = useState(null);
   useEffect(() => {
-    (async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+    // get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-    })();
-    const { subscription } = supabase.auth.onAuthStateChange((_e, sess) => {
-      setSession(sess);
     });
-    return () => subscription.unsubscribe();
+    // listen for changes
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setSession(session);
+      }
+    );
+    return () => {
+      listener.subscription.unsubscribe();
+    };
   }, []);
 
-  // —————————— 1) UI state ——————————
+  // ————— 2) UI state —————
   const [candles, setCandles] = useState([]);
   const [isPlacing, setIsPlacing] = useState(false);
-  const [modal, setModal] = useState({ open: false, index: null, id: null, text: '' });
-  const [hovered, setHovered] = useState({ visible: false, x: 0, y: 0, text: '' });
+  const [modal, setModal] = useState({
+    open: false,
+    index: null,
+    id: null,
+    text: '',
+  });
+  const [hovered, setHovered] = useState({
+    visible: false,
+    x: 0,
+    y: 0,
+    text: '',
+  });
 
-  // —————————— 2) Fetch last-24h candles ——————————
+  // ————— 3) Load last-24h candles —————
   useEffect(() => {
     (async () => {
       const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
@@ -41,26 +54,29 @@ export default function Home() {
     })();
   }, []);
 
-  // —————————— 3) Place a new candle ——————————
+  // ————— 4) Place a new candle —————
   const handleScreenClick = async (e) => {
     if (!isPlacing) return;
     setIsPlacing(false);
 
     if (!session?.user?.id) {
-      console.warn('You must be signed in to place a candle');
+      console.warn('Must be signed in to place a candle');
       return;
     }
 
     const x = e.clientX;
     const y = e.clientY;
+
     const { data, error } = await supabase
       .from('candles')
-      .insert([{
-        x,
-        y,
-        note: '',
-        user_id: session.user.id,
-      }])
+      .insert([
+        {
+          x,
+          y,
+          note: '',
+          user_id: session.user.id, // ← tag with your UID
+        },
+      ])
       .select();
 
     if (error) {
@@ -70,19 +86,24 @@ export default function Home() {
     }
   };
 
-  // —————————— 4) Open & submit letter modal ——————————
+  // ————— 5) Open & submit letter modal —————
   const openModal = (idx, id) => {
-    setModal({ open: true, index: idx, id, text: candles[idx].note || '' });
+    setModal({
+      open: true,
+      index: idx,
+      id,
+      text: candles[idx].note || '',
+    });
   };
   const handleModalSubmit = async () => {
     const { index, id, text } = modal;
-    // Optimistic update
+    // optimistic UI
     setCandles((prev) => {
       const copy = [...prev];
       copy[index].note = text;
       return copy;
     });
-    // Persist
+    // persist
     const { error } = await supabase
       .from('candles')
       .update({ note: text })
@@ -104,7 +125,7 @@ export default function Home() {
         fontFamily: 'sans-serif',
       }}
     >
-      {/* Central Candle (always visible) */}
+      {/* Central Candle */}
       <div
         onClick={(e) => {
           e.stopPropagation();
