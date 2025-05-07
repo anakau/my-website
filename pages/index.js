@@ -129,8 +129,8 @@ export default function Home() {
         <img src="/candle.gif" alt="" style={{ height: 120, width: 'auto' }} />
         <p style={{ margin: '8px 0 0', color: '#333' }}>
           Click to light your candle,<br/>
-          place it anywhere in this world,<br/>
-          write a note.
+          place it anywhere in this space,<br/>
+          write a note if you like or read others.
         </p>
       </div>
 
