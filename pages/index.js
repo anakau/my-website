@@ -11,7 +11,7 @@ export default function Home() {
   const [showInfo, setShowInfo] = useState(false);
   const containerRef = useRef(null);
 
-  // load candles from last 24h
+  // load recent candles
   useEffect(() => {
     (async () => {
       const cutoff = new Date(Date.now() - 24*60*60*1000).toISOString();
@@ -67,9 +67,8 @@ export default function Home() {
         />
       </Head>
 
-      {/* Light a Candle Button */}
+      {/* Light a Candle Button (default font) */}
       <button
-        className="oooh-baby"
         onClick={() => setShowInfo(!showInfo)}
         style={{
           position: 'fixed',
@@ -82,12 +81,13 @@ export default function Home() {
           borderRadius: 4,
           cursor: 'pointer',
           zIndex: 100,
+          fontFamily: 'sans-serif'
         }}
       >
         Light a Candle
       </button>
 
-      {/* Info Popover (anchored under the button) */}
+      {/* Info Popover */}
       {showInfo && (
         <div
           style={{
@@ -103,7 +103,7 @@ export default function Home() {
             fontFamily: 'sans-serif',
           }}
         >
-          <h2 className="oooh-baby" style={{ margin: 0, marginBottom: 8, fontSize: '1.5rem' }}>
+          <h2 style={{ margin: 0, marginBottom: 8, fontSize: '1.5rem' }}>
             About This Project
           </h2>
           <p style={{ margin: 0, lineHeight: 1.4, fontSize: '0.9rem' }}>
@@ -122,6 +122,7 @@ export default function Home() {
               border: 'none',
               borderRadius: 4,
               cursor: 'pointer',
+              fontFamily: 'sans-serif'
             }}
           >
             Close
@@ -200,10 +201,10 @@ export default function Home() {
         }}
       >
         <img src="/candle.gif" alt="" style={{ height: 120, width: 'auto' }} />
-        <p style={{ margin: '8px 0 0', color: '#333', fontFamily: 'sans-serif' }}>
+        <p className="oooh-baby" style={{ margin: '8px 0 0', color: '#333' }}>
           Click to light your candle,<br/>
-          place it anywhere in this world,<br/>
-          write a note.
+          place it anywhere in this space,<br/>
+          write a note or read one.
         </p>
       </div>
 
@@ -261,8 +262,6 @@ export default function Home() {
       <style jsx global>{`
         .oooh-baby {
           font-family: "Oooh Baby", cursive;
-          font-weight: 400;
-          font-style: normal;
         }
       `}</style>
     </>
