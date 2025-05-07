@@ -118,15 +118,15 @@ export default function Home() {
             <p style={{ margin: 0 }}>
               Prolonged war, deep loss, grief, fear, hope and eternal love. I feel
               so much every day, especially given the state of affairs of the world.
-              This attempt to create a digital space for global solidarity by
+              This is an attempt to create a digital space for global solidarity by
               creating a pixel of hope and accessing communal power in a small way.
               Light a Candle is a scream into the void.
             </p>
             <p style={{ margin: '12px 0 0', fontSize: '0.85rem' }}>
-              Created with ❤️ by Anahat Kaur in her little studio apartment in Berlin 🇩🇪
+              Created with ❤️ by Anahat Kaur in her little apartment in Berlin 🇩🇪
             </p>
             <p style={{ margin: '8px 0 0', fontSize: '0.85rem' }}>
-              Would not have been possible without ChatGPT
+              Thanks to the powers of Ai to make this possible
             </p>
           </div>
         </div>
