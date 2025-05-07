@@ -32,30 +32,30 @@ export default function Home() {
     })();
   }, []);
 
-  // 3) Place a new candle
-  const handleScreenClick = async (e) => {
-    if (!isPlacing) return;
-    setIsPlacing(false);
+// inside your Home() component, after you’ve set up `session` via supabase.auth.getSession()
+const handleScreenClick = async (e) => {
+  if (!isPlacing) return;
+  setIsPlacing(false);
 
-    const x = e.clientX;
-    const y = e.clientY;
+  const x = e.clientX;
+  const y = e.clientY;
 
-    const { data, error } = await supabase
-      .from('candles')
-      .insert([{
-        x,
-        y,
-        note: '',
-        user_id: session?.user?.id   // tag with logged-in user
-      }])
-      .select();
+  const { data, error } = await supabase
+    .from('candles')
+    .insert([{
+      x,
+      y,
+      note: '',                       // start empty
+      user_id: session.user.id       // ← tag with your UID
+    }])
+    .select();
 
-    if (error) {
-      console.error('Insert error:', error);
-    } else if (Array.isArray(data)) {
-      setCandles((prev) => [...prev, ...data]);
-    }
-  };
+  if (error) {
+    console.error('Insert error:', error);
+  } else if (Array.isArray(data)) {
+    setCandles(prev => [...prev, ...data]);
+  }
+};
 
   // 4) Open & submit letter modal
   const openModal = (idx, id) => {
