@@ -59,11 +59,6 @@ export default function Home() {
     if (!isPlacing) return;
     setIsPlacing(false);
 
-    if (!session?.user?.id) {
-      console.warn('Must be signed in to place a candle');
-      return;
-    }
-
     const x = e.clientX;
     const y = e.clientY;
 
@@ -74,7 +69,6 @@ export default function Home() {
           x,
           y,
           note: '',
-          user_id: session.user.id, // ← tag with your UID
         },
       ])
       .select();
