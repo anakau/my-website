@@ -3,10 +3,12 @@ import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabaseClient';
 
 export default function Home() {
+  // UI state
   const [candles, setCandles] = useState([]);
   const [isPlacing, setIsPlacing] = useState(false);
   const [modal, setModal] = useState({ open: false, index: null, id: null, text: '' });
   const [hovered, setHovered] = useState({ visible: false, x: 0, y: 0, text: '' });
+  const [showInfo, setShowInfo] = useState(false);    // <-- info modal
   const containerRef = useRef(null);
 
   // Load recent candles
@@ -28,19 +30,22 @@ export default function Home() {
     setIsPlacing(false);
     const container = containerRef.current;
     if (!container) return;
+
     const rect = container.getBoundingClientRect();
     const x = e.clientX - rect.left + container.scrollLeft;
     const y = e.clientY - rect.top + container.scrollTop;
+
     const { data, error } = await supabase
       .from('candles')
       .insert([{ x, y, note: '' }])
       .select();
+
     if (!error && Array.isArray(data)) {
       setCandles(prev => [...prev, ...data]);
     }
   };
 
-  // Open & submit modal
+  // Open & submit note-modal
   const openModal = (idx, id) => {
     setModal({ open: true, index: idx, id, text: candles[idx].note || '' });
   };
@@ -57,7 +62,78 @@ export default function Home() {
 
   return (
     <>
-      {/* scrollable 2D world */}
+      {/* Info Button */}
+      <button
+        onClick={() => setShowInfo(true)}
+        style={{
+          position: 'fixed',
+          top: 12,
+          left: 12,
+          padding: '8px 12px',
+          backgroundColor: '#d2691e',
+          color: '#fff',
+          border: 'none',
+          borderRadius: 4,
+          cursor: 'pointer',
+          zIndex: 30,
+          fontFamily: 'sans-serif',
+        }}
+      >
+        Light a Candle
+      </button>
+
+      {/* Info Modal */}
+      {showInfo && (
+        <div
+          onClick={() => setShowInfo(false)}
+          style={{
+            position: 'fixed',
+            top: 0, left: 0,
+            width: '100vw', height: '100vh',
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: 40
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: '#fff',
+              padding: 20,
+              borderRadius: 8,
+              width: '90%',
+              maxWidth: 400,
+              boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
+              fontFamily: 'sans-serif',
+            }}
+          >
+            <h2 style={{ marginTop: 0 }}>About This Project</h2>
+            <p>
+              This is a communal candle‐lighting web app built with Next.js and Supabase.
+              Place virtual candles across an infinite canvas and share your messages.
+            </p>
+            <p style={{ fontStyle: 'italic', marginTop: 12 }}>
+              © 2025 Anahat Kaur
+            </p>
+            <div style={{ textAlign: 'right', marginTop: 16 }}>
+              <button
+                onClick={() => setShowInfo(false)}
+                style={{
+                  padding: '6px 12px',
+                  border: 'none',
+                  backgroundColor: '#eee',
+                  borderRadius: 4,
+                  cursor: 'pointer',
+                }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Scrollable world */}
       <div
         ref={containerRef}
         onClick={handleScreenClick}
@@ -70,7 +146,6 @@ export default function Home() {
           position: 'relative'
         }}
       >
-        {/* large canvas */}
         <div style={{ width: 3000, height: 2000, position: 'relative' }}>
           {candles.map((c, i) => (
             <div
@@ -90,7 +165,6 @@ export default function Home() {
             </div>
           ))}
 
-          {/* tooltip */}
           {hovered.visible && (
             <div
               style={{
@@ -113,7 +187,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* fixed central candle */}
+      {/* Fixed central candle */}
       <div
         onClick={e => { e.stopPropagation(); setIsPlacing(true); }}
         style={{
@@ -123,18 +197,18 @@ export default function Home() {
           transform: 'translate(-50%, -50%)',
           textAlign: 'center',
           cursor: 'pointer',
-          zIndex: 10
+          zIndex: 20
         }}
       >
         <img src="/candle.gif" alt="" style={{ height: 120, width: 'auto' }} />
-        <p style={{ margin: '8px 0 0', color: '#333' }}>
+        <p style={{ margin: '8px 0 0', color: '#333', fontFamily: 'sans-serif' }}>
           Click to light your candle,<br/>
           place it anywhere in this space,<br/>
-          write a note if you like or read others.
+          write or read other notes .
         </p>
       </div>
 
-      {/* letter modal */}
+      {/* Letter modal */}
       {modal.open && (
         <div
           style={{
@@ -147,7 +221,7 @@ export default function Home() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            zIndex: 20
+            zIndex: 30
           }}
         >
           <div style={{
@@ -155,7 +229,8 @@ export default function Home() {
             padding: 20,
             borderRadius: 8,
             width: '90%',
-            maxWidth: 400
+            maxWidth: 400,
+            fontFamily: 'sans-serif'
           }}>
             <h3 style={{ marginTop: 0 }}>Write your letter</h3>
             <textarea
