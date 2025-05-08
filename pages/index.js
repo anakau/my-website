@@ -127,7 +127,7 @@ export default function Home() {
               communal power in a small way. Light a Candle is a scream into the void.
             </p>
             <p style={{ margin: '12px 0 0', fontSize: '0.8rem', color: '#555' }}>
-              Created with ❤️ by Anahat Kaur in her little studio apartment in Berlin 🇩🇪
+              Created with ❤️ by Anahat Kaur in Berlin 🇩🇪
             </p>
           </div>
         </div>
