@@ -42,7 +42,7 @@ export default function Home() {
   const [showInfo, setShowInfo]   = useState(false)
   const worldRef = useRef(null)
 
-  // Load all candles from Supabase
+  // Load all candles
   useEffect(() => {
     supabase
       .from('candles')
@@ -53,7 +53,7 @@ export default function Home() {
       })
   }, [])
 
-  // Center the scrollable area on mount
+  // Center the scrollable world
   useEffect(() => {
     const el = worldRef.current
     if (!el) return
@@ -63,7 +63,7 @@ export default function Home() {
     })
   }, [])
 
-  // Handle click to place new candle
+  // Place a new candle
   const handleWorldClick = async e => {
     if (!isPlacing) return
     setIsPlacing(false)
@@ -81,7 +81,6 @@ export default function Home() {
     if (!error && data?.length) {
       const row = data[0]
       setCandles(prev => {
-        // open modal for newly placed candle
         setModal({
           open: true,
           index: oldLen,
@@ -93,12 +92,10 @@ export default function Home() {
         })
         return [...prev, row]
       })
-    } else if (error) {
-      console.error('Insert error:', error)
     }
   }
 
-  // Submit the letter + flag selection
+  // Submit letter + flag
   const submitModal = async () => {
     const { index, id, text, country } = modal
     setCandles(prev => {
@@ -132,17 +129,12 @@ export default function Home() {
       <button
         onClick={() => setShowInfo(v => !v)}
         style={{
-          position: 'fixed',
-          top: 12,
-          left: 12,
+          position: 'fixed', top: 12, left: 12,
           padding: '8px 12px',
-          background: '#fff',
-          color: '#d2691e',
-          border: 'none',
-          textDecoration: 'underline',
+          background: '#fff', color: '#d2691e',
+          border: 'none', textDecoration: 'underline',
           cursor: 'pointer',
-          fontFamily: 'Noto Sans, sans-serif',
-          fontSize: 16,
+          fontFamily: 'Noto Sans, sans-serif', fontSize: 16,
           zIndex: 1000,
         }}
       >
@@ -159,44 +151,31 @@ export default function Home() {
           <div
             onClick={e => e.stopPropagation()}
             style={{
-              position: 'absolute',
-              top: 48,
-              left: 12,
-              width: 300,
-              background: '#f2f2f2',
-              borderRadius: 6,
-              padding: 16,
+              position: 'absolute', top: 48, left: 12,
+              width: 300, background: '#f2f2f2',
+              borderRadius: 6, padding: 16,
               boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
               fontFamily: 'Noto Sans, sans-serif',
-              fontSize: 14,
-              lineHeight: 1.4,
-              color: '#333',
+              fontSize: 14, lineHeight: 1.4, color: '#333'
             }}
           >
             <p style={{ margin: 0 }}>
-              Prolonged war, deep loss, grief, fear, hope and eternal love. I feel so much every
-              day, especially given the state of affairs of the world. This is an attempt to create
-              a digital space for global solidarity and accessing communal power in a small way.
-              Light a Candle is a scream into the void.
+              Prolonged war, deep loss, grief, fear, hope and eternal love...
             </p>
             <p style={{ marginTop: 12, fontSize: 12, color: '#555' }}>
-              Created with ❤️ by Anahat Kaur
-              <br />
-              2025 Berlin
+              Created with ❤️ by Anahat Kaur<br/>2025 Berlin
             </p>
           </div>
         </div>
       )}
 
-      {/* Scrollable canvas */}
+      {/* Scrollable world */}
       <div
         ref={worldRef}
         onClick={handleWorldClick}
         style={{
-          width: '100vw',
-          height: '100vh',
-          overflow: 'auto',
-          background: '#fff',
+          width: '100vw', height: '100vh',
+          overflow: 'auto', background: '#fff',
           cursor: isPlacing ? 'crosshair' : 'default',
         }}
       >
@@ -208,19 +187,17 @@ export default function Home() {
                 if (!c.note) return
                 setHover({
                   visible: true,
-                  x: c.x,
-                  y: c.y,
+                  x: c.x, y: c.y,
                   text: c.note,
-                  date: new Date(c.created_at).toLocaleString(),
+                  date: new Date(c.created_at).toLocaleString()
                 })
               }}
               onMouseLeave={() => setHover(h => ({ ...h, visible: false }))}
               style={{
                 position: 'absolute',
-                left: c.x,
-                top: c.y,
+                left: c.x, top: c.y,
                 transform: 'translate(-50%, -100%)',
-                textAlign: 'center',
+                textAlign: 'center'
               }}
             >
               <img src="/candle.gif" alt="" style={{ height: 60, width: 'auto' }} />
@@ -239,7 +216,7 @@ export default function Home() {
                 position: 'absolute',
                 left: hover.x,
                 top: hover.y,
-                transform: 'translate(-50%, -120%)',
+                transform: 'translate(-50%, -150%)',
                 background: '#f2f2f2',
                 color: '#5a3e2b',
                 padding: '12px 16px',
@@ -252,15 +229,12 @@ export default function Home() {
                 zIndex: 400,
               }}
             >
-              {/* little tail */}
               <div
                 style={{
                   position: 'absolute',
                   bottom: -12,
                   left: '50%',
                   transform: 'translateX(-50%)',
-                  width: 0,
-                  height: 0,
                   borderLeft: '8px solid transparent',
                   borderRight: '8px solid transparent',
                   borderTop: '12px solid #f2f2f2',
@@ -273,19 +247,15 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Central candle (always on top) */}
+      {/* Central candle (top layer) */}
       <div
-        onClick={e => {
-          e.stopPropagation()
-          setIsPlacing(true)
-        }}
+        onClick={e => { e.stopPropagation(); setIsPlacing(true) }}
         style={{
           position: 'fixed',
-          top: '50%',
-          left: '50%',
+          top: '50%', left: '50%',
           transform: 'translate(-50%, -50%)',
           textAlign: 'center',
-          zIndex: 500,
+          zIndex: 500
         }}
       >
         <img src="/candle.gif" alt="" style={{ height: 60, width: 'auto' }} />
@@ -295,35 +265,32 @@ export default function Home() {
             color: '#333',
             fontFamily: 'Noto Sans, sans-serif',
             fontSize: 15,
-            lineHeight: 1.4,
+            lineHeight: 1.4
           }}
         >
-          Click to light your candle,
-          <br />
-          place it anywhere in this space,
-          <br />
+          Click to light your candle,<br/>
+          place it anywhere in this space,<br/>
           write a note or read one.
         </p>
       </div>
 
-      {/* Total counter */}
+      {/* Total count */}
       <div
         style={{
           position: 'fixed',
-          bottom: 12,
-          right: 12,
+          bottom: 12, right: 12,
           background: 'rgba(255,255,255,0.8)',
           padding: '6px 10px',
           borderRadius: 4,
           fontFamily: 'Noto Sans, sans-serif',
           fontSize: 14,
-          zIndex: 1000,
+          zIndex: 1000
         }}
       >
         Total candles: {candles.length}
       </div>
 
-      {/* Letter + flag modal (appears at candle) */}
+      {/* Letter modal bubble */}
       {modal.open && (
         <>
           {/* backdrop */}
@@ -342,14 +309,14 @@ export default function Home() {
             style={{ position: 'fixed', inset: 0, zIndex: 800 }}
           />
 
-          {/* bubble */}
+          {/* bubble at candle */}
           <div
             onClick={e => e.stopPropagation()}
             style={{
               position: 'fixed',
               left: modal.x,
               top: modal.y,
-              transform: 'translate(-50%, -120%)',
+              transform: 'translate(-50%, -150%)',
               background: '#f2f2f2',
               borderRadius: 16,
               padding: 16,
@@ -357,24 +324,20 @@ export default function Home() {
               fontFamily: 'Noto Sans, sans-serif',
               fontSize: 14,
               lineHeight: 1.4,
-              zIndex: 400,
+              zIndex: 400
             }}
           >
-            {/* tail */}
             <div
               style={{
                 position: 'absolute',
                 bottom: -12,
                 left: '50%',
                 transform: 'translateX(-50%)',
-                width: 0,
-                height: 0,
                 borderLeft: '8px solid transparent',
                 borderRight: '8px solid transparent',
-                borderTop: '12px solid #f2f2f2',
+                borderTop: '12px solid #f2f2f2'
               }}
             />
-
             <h4 style={{ margin: '0 0 8px', fontWeight: 400 }}>
               Write your message (you cannot undo this)
             </h4>
@@ -393,7 +356,7 @@ export default function Home() {
                 marginBottom: 12,
                 resize: 'vertical',
                 background: '#fff',
-                color: '#000',
+                color: '#000'
               }}
             />
             <div style={{ textAlign: 'right', fontSize: 12, color: '#666', marginBottom: 12 }}>
@@ -408,7 +371,7 @@ export default function Home() {
                 border: '1px solid #ddd',
                 borderRadius: 4,
                 marginBottom: 12,
-                background: '#fff',
+                background: '#fff'
               }}
             >
               <option value="">— Select country —</option>
@@ -427,7 +390,7 @@ export default function Home() {
                 color: '#fff',
                 border: 'none',
                 borderRadius: 4,
-                cursor: 'pointer',
+                cursor: 'pointer'
               }}
             >
               Share Letter
