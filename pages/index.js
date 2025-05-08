@@ -1,60 +1,49 @@
 // pages/index.js
-
 import { useState, useEffect, useRef } from 'react'
 import Head from 'next/head'
 import { supabase } from '../lib/supabaseClient'
 import countries from 'i18n-iso-countries'
 import enLocale from 'i18n-iso-countries/langs/en.json'
 
-// Register English locale for country names
+// Register English locale and build sorted [code, name] list
 countries.registerLocale(enLocale)
 const COUNTRY_LIST = Object.entries(
   countries.getNames('en', { select: 'official' })
-).sort((a, b) => a[1].localeCompare(b[1])) // [ [code, name], ... ]
+).sort((a, b) => a[1].localeCompare(b[1]))
 
 // Helper: "US" → 🇺🇸
 function flagEmoji(cc) {
   return cc
     .toUpperCase()
-    .replace(/./g, char =>
-      String.fromCodePoint(0x1f1e6 - 65 + char.charCodeAt(0))
+    .replace(/./g, c =>
+      String.fromCodePoint(0x1f1e6 - 65 + c.charCodeAt(0))
     )
 }
 
 export default function Home() {
-  const [candles, setCandles] = useState([])
+  const [candles, setCandles]     = useState([])
   const [isPlacing, setIsPlacing] = useState(false)
-  const [modal, setModal] = useState({
-    open: false,
-    index: null,
-    id: null,
-    text: '',
-    country: ''
+  const [modal, setModal]         = useState({
+    open: false, index: null, id: null, text: '', country: ''
   })
-  const [hover, setHover] = useState({
-    visible: false,
-    x: 0,
-    y: 0,
-    text: '',
-    date: ''
+  const [hover, setHover]         = useState({
+    visible: false, x: 0, y: 0, text: '', date: ''
   })
-  const [showInfo, setShowInfo] = useState(false)
-  const worldRef = useRef(null)
+  const [showInfo, setShowInfo]   = useState(false)
+  const worldRef                  = useRef(null)
 
-  // Fetch all candles once
+  // 1) Load all candles
   useEffect(() => {
-    ;(async () => {
-      const { data, error } = await supabase
-        .from('candles')
-        .select('*')
-        .order('created_at', { ascending: true })
-      if (!error && Array.isArray(data)) {
-        setCandles(data)
-      }
-    })()
+    supabase
+      .from('candles')
+      .select('*')
+      .order('created_at', { ascending: true })
+      .then(({ data, error }) => {
+        if (!error) setCandles(data)
+      })
   }, [])
 
-  // Center the scrollable area on mount
+  // 2) Center the scroll area
   useEffect(() => {
     const el = worldRef.current
     if (!el) return
@@ -64,7 +53,7 @@ export default function Home() {
     })
   }, [])
 
-  // Handle placing a new candle
+  // 3) Place a new candle when in “placing” mode
   const handleWorldClick = async (e) => {
     if (!isPlacing) return
     setIsPlacing(false)
@@ -82,7 +71,7 @@ export default function Home() {
     if (!error && Array.isArray(data)) {
       setCandles(prev => {
         const next = [...prev, ...data]
-        // open modal for the newly added candle
+        // open modal on that new candle
         setModal({
           open: true,
           index: oldLen,
@@ -97,22 +86,19 @@ export default function Home() {
     }
   }
 
-  // Submit letter + country
+  // 4) Submit note + country for the just-placed candle
   const submitModal = async () => {
     const { index, id, text, country } = modal
-    // Optimistic UI
     setCandles(prev => {
       const cp = [...prev]
-      cp[index].note = text
+      cp[index].note         = text
       cp[index].country_code = country
       return cp
     })
-
     await supabase
       .from('candles')
       .update({ note: text, country_code: country })
       .eq('id', id)
-
     setModal({ open: false, index: null, id: null, text: '', country: '' })
   }
 
@@ -126,18 +112,12 @@ export default function Home() {
       <button
         onClick={() => setShowInfo(v => !v)}
         style={{
-          position: 'fixed',
-          top: 12,
-          left: 12,
-          padding: '8px 12px',
-          background: '#fff',
-          color: '#d2691e',
-          border: 'none',
-          textDecoration: 'underline',
-          cursor: 'pointer',
-          zIndex: 1000,
-          fontFamily: 'Noto Sans, sans-serif',
-          fontSize: 16
+          position: 'fixed', top: 12, left: 12,
+          background: '#fff', color: '#d2691e',
+          border: 'none', textDecoration: 'underline',
+          padding: '8px 12px', cursor: 'pointer',
+          fontFamily: 'Noto Sans, sans-serif', fontSize: 16,
+          zIndex: 1000
         }}
       >
         light a candle . space
@@ -153,23 +133,17 @@ export default function Home() {
           <div
             onClick={e => e.stopPropagation()}
             style={{
-              position: 'absolute',
-              top: 48,
-              left: 12,
-              width: 300,
-              background: '#fff',
-              borderRadius: 6,
+              position: 'absolute', top: 48, left: 12,
+              width: 300, background: '#fff',
+              borderRadius: 6, padding: 16,
               boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-              padding: 16,
               fontFamily: 'Noto Sans, sans-serif',
-              fontSize: 14,
-              lineHeight: 1.4,
-              color: '#333'
+              fontSize: 14, lineHeight: 1.4, color: '#333'
             }}
           >
             <p style={{ margin: 0 }}>
-              Prolonged war, deep loss, grief, fear, hope and eternal love. I feel so
-              much every day, especially given the state of affairs of the world.
+              Prolonged war, deep loss, grief, fear, hope and eternal love. I feel
+              so much every day, especially given the state of affairs of the world.
               This is an attempt to create a digital space for global solidarity and
               accessing communal power in a small way. Light a Candle is a scream
               into the void.
@@ -181,15 +155,13 @@ export default function Home() {
         </div>
       )}
 
-      {/* Scrollable world */}
+      {/* Scrollable world area */}
       <div
         ref={worldRef}
         onClick={handleWorldClick}
         style={{
-          width: '100vw',
-          height: '100vh',
-          overflow: 'auto',
-          background: '#fff',
+          width: '100vw', height: '100vh',
+          overflow: 'auto', background: '#fff',
           position: 'relative',
           cursor: isPlacing ? 'crosshair' : 'default'
         }}
@@ -202,8 +174,7 @@ export default function Home() {
                 if (!c.note) return
                 setHover({
                   visible: true,
-                  x: c.x,
-                  y: c.y,
+                  x: c.x, y: c.y,
                   text: c.note,
                   date: new Date(c.created_at).toLocaleString()
                 })
@@ -211,9 +182,9 @@ export default function Home() {
               onMouseLeave={() => setHover(h => ({ ...h, visible: false }))}
               style={{
                 position: 'absolute',
-                left: c.x,
-                top: c.y,
-                transform: 'translate(-50%, -100%)'
+                left: c.x, top: c.y,
+                transform: 'translate(-50%, -100%)',
+                textAlign: 'center'
               }}
             >
               <img
@@ -221,10 +192,16 @@ export default function Home() {
                 alt="User Candle"
                 style={{ height: 60, width: 'auto' }}
               />
+              {/* flag under each candle */}
+              {c.country_code && (
+                <div style={{ fontSize: 18, marginTop: 4 }}>
+                  {flagEmoji(c.country_code)}
+                </div>
+              )}
             </div>
           ))}
 
-          {/* Hover tooltip */}
+          {/* hover tooltip */}
           {hover.visible && (
             <div
               style={{
@@ -252,14 +229,10 @@ export default function Home() {
 
       {/* Central candle */}
       <div
-        onClick={e => {
-          e.stopPropagation()
-          setIsPlacing(true)
-        }}
+        onClick={e => { e.stopPropagation(); setIsPlacing(true) }}
         style={{
           position: 'fixed',
-          top: '50%',
-          left: '50%',
+          top: '50%', left: '50%',
           transform: 'translate(-50%, -50%)',
           textAlign: 'center',
           cursor: 'pointer',
@@ -269,7 +242,7 @@ export default function Home() {
         <img
           src="/candle.gif"
           alt="Main Candle"
-          style={{ height: 60, width: 'auto', zIndex: 1 }}
+          style={{ height: 60, width: 'auto' }}
         />
         <p
           style={{
@@ -280,37 +253,32 @@ export default function Home() {
             lineHeight: 1.4
           }}
         >
-          Click to light your candle,
-          <br />
-          place it anywhere in this space,
-          <br />
+          Click to light your candle,<br/>
+          place it anywhere in this space,<br/>
           write a note or read one.
         </p>
       </div>
 
-      {/* Total candles counter */}
+      {/* total counter */}
       <div
         style={{
           position: 'fixed',
-          bottom: 12,
-          right: 12,
+          bottom: 12, right: 12,
           background: 'rgba(255,255,255,0.8)',
           padding: '6px 10px',
           borderRadius: 4,
           fontFamily: 'Noto Sans, sans-serif',
           fontSize: 14,
-          zIndex: 100
+          zIndex: 1000
         }}
       >
         Total candles: {candles.length}
       </div>
 
-      {/* Letter Modal (for new drop only) */}
+      {/* letter modal */}
       {modal.open && (
         <div
-          onClick={() =>
-            setModal({ open: false, index: null, id: null, text: '', country: '' })
-          }
+          onClick={() => setModal({ open: false, index: null, id: null, text: '', country: '' })}
           style={{
             position: 'fixed',
             inset: 0,
@@ -333,11 +301,10 @@ export default function Home() {
             }}
           >
             <h3 style={{ margin: '0 0 12px' }}>Write your letter</h3>
+
             <select
               value={modal.country}
-              onChange={e =>
-                setModal(m => ({ ...m, country: e.target.value }))
-              }
+              onChange={e => setModal(m => ({ ...m, country: e.target.value }))}
               style={{ width: '100%', padding: 8, marginBottom: 16 }}
             >
               <option value="">— Select country —</option>
@@ -347,13 +314,12 @@ export default function Home() {
                 </option>
               ))}
             </select>
+
             <textarea
               rows={4}
               placeholder="Your message…"
               value={modal.text}
-              onChange={e =>
-                setModal(m => ({ ...m, text: e.target.value.slice(0, 200) }))
-              }
+              onChange={e => setModal(m => ({ ...m, text: e.target.value.slice(0,200) }))}
               style={{
                 width: '100%',
                 padding: 12,
