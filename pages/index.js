@@ -179,29 +179,29 @@ export default function Home() {
           ))}
 
           {/* Tooltip */}
-          {hovered.visible && (
-            <div
-              style={{
-                position: 'absolute',
-                left: hovered.x + 20,
-                top: hovered.y - 30,
-                background: 'rgba(0,0,0,0.75)',
-                color: '#fff',
-                padding: '6px 10px',
-                borderRadius: 4,
-                pointerEvents: 'none',
-                maxWidth: 160,
-                fontSize: 13,
-                lineHeight: 1.4,
-              }}
-            >
-              <div style={{ marginBottom: 4 }}>{hovered.text}</div>
-              <div style={{ fontSize: 11, opacity: 0.8 }}>{hovered.date}</div>
-            </div>
-          )}
-        </div>
-      </div>
-
+       {hovered.visible && (
+  <div
+    style={{
+      position: 'absolute',
+      left: hovered.x + 20,
+      top: hovered.y - 30,
+      background: '#f9f5f0',         // off‑white
+      color: '#5a3e2b',              // warm brown
+      padding: '12px 16px',          // more space
+      borderRadius: 6,
+      pointerEvents: 'none',
+      maxWidth: 200,
+      fontSize: 14,
+      lineHeight: 1.6,
+      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+    }}
+  >
+    <div style={{ marginBottom: 8 }}>{hovered.text}</div>
+    <div style={{ fontSize: 12, color: '#7f5d4b' }}>
+      {hovered.date}
+    </div>
+  </div>
+)}
       {/* Central candle + random-length sunburst */}
       <div
         onClick={e => {
