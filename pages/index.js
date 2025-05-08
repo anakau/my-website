@@ -11,20 +11,18 @@ export default function Home() {
   const [showInfo, setShowInfo] = useState(false);
   const containerRef = useRef(null);
 
-  // 1) Fetch last‑24h candles
+  // Fetch *all* candles (no cutoff)
   useEffect(() => {
     (async () => {
-      const cutoff = new Date(Date.now() - 86400_000).toISOString();
       const { data, error } = await supabase
         .from('candles')
         .select('*')
-        .gte('created_at', cutoff)
         .order('created_at', { ascending: true });
       if (!error && Array.isArray(data)) setCandles(data);
     })();
   }, []);
 
-  // 2) Center the scrollable canvas on mount
+  // Center the scrollable canvas on mount
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -34,7 +32,7 @@ export default function Home() {
     });
   }, []);
 
-  // Place a new candle
+  // Place a new candle at click location
   const handleScreenClick = async (e) => {
     if (!isPlacing) return setIsPlacing(false);
     setIsPlacing(false);
@@ -45,16 +43,15 @@ export default function Home() {
       .from('candles')
       .insert([{ x, y, note: '' }])
       .select();
-    if (!error && Array.isArray(data)) {
-      setCandles(prev => [...prev, ...data]);
-    }
+    if (!error && Array.isArray(data)) setCandles(prev => [...prev, ...data]);
   };
 
-  // Open & submit letter modal
+  // Open & populate the letter modal
   const openModal = (index, id) => {
     setModal({ open: true, index, id, text: candles[index].note || '' });
   };
 
+  // Submit updated note
   const handleModalSubmit = async () => {
     const { index, id, text } = modal;
     setCandles(prev => {
@@ -69,8 +66,8 @@ export default function Home() {
   return (
     <>
       <Head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+        <link rel="preconnect" href="https://fonts.googleapis.com"/>
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin=""/>
         <link
           href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700&display=swap"
           rel="stylesheet"
@@ -127,8 +124,7 @@ export default function Home() {
               communal power in a small way. Light a Candle is a scream into the void.
             </p>
             <p style={{ margin: '12px 0 0', fontSize: '0.8rem', color: '#555' }}>
-              Created with ❤️ by Anahat Kaur
-              <br /> 2025 Berlin
+              Created with ❤️ by Anahat Kaur<br/>2025 Berlin
             </p>
           </div>
         </div>
@@ -151,10 +147,7 @@ export default function Home() {
           {candles.map((c, i) => (
             <div
               key={c.id}
-              onClick={e => {
-                e.stopPropagation();
-                openModal(i, c.id);
-              }}
+              onClick={e => { e.stopPropagation(); openModal(i, c.id); }}
               onMouseEnter={() => {
                 if (!c.note) return;
                 setHovered({
@@ -179,35 +172,35 @@ export default function Home() {
           ))}
 
           {/* Tooltip */}
-       {hovered.visible && (
-  <div
-    style={{
-      position: 'absolute',
-      left: hovered.x + 20,
-      top: hovered.y - 30,
-      background: '#f9f5f0',         // off‑white
-      color: '#5a3e2b',              // warm brown
-      padding: '12px 16px',          // more space
-      borderRadius: 6,
-      pointerEvents: 'none',
-      maxWidth: 200,
-      fontSize: 14,
-      lineHeight: 1.6,
-      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-    }}
-  >
-    <div style={{ marginBottom: 8 }}>{hovered.text}</div>
-    <div style={{ fontSize: 12, color: '#7f5d4b' }}>
-      {hovered.date}
-    </div>
-  </div>
-)}
+          {hovered.visible && (
+            <div
+              style={{
+                position: 'absolute',
+                left: hovered.x + 20,
+                top: hovered.y - 30,
+                background: '#f9f5f0',
+                color: '#5a3e2b',
+                padding: '12px 16px',
+                borderRadius: 6,
+                pointerEvents: 'none',
+                maxWidth: 200,
+                fontSize: 14,
+                lineHeight: 1.6,
+                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+              }}
+            >
+              <div style={{ marginBottom: 8 }}>{hovered.text}</div>
+              <div style={{ fontSize: 12, color: '#7f5d4b' }}>
+                {hovered.date}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Central candle + random-length sunburst */}
       <div
-        onClick={e => {
-          e.stopPropagation();
-          setIsPlacing(true);
-        }}
+        onClick={e => { e.stopPropagation(); setIsPlacing(true); }}
         style={{
           position: 'fixed',
           top: '50%',
