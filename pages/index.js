@@ -21,20 +21,20 @@ function flagEmoji(cc) {
 }
 
 export default function Home() {
-  const [candles, setCandles]   = useState([])
+  const [candles, setCandles]     = useState([])
   const [isPlacing, setIsPlacing] = useState(false)
-  const [modal, setModal]       = useState({
+  const [modal, setModal]         = useState({
     open: false, index: null, id: null,
     text: '', country: '',
     pointerX: 0, pointerY: 0
   })
-  const [hover, setHover]       = useState({
+  const [hover, setHover]         = useState({
     visible: false, x: 0, y: 0, text: '', date: ''
   })
-  const [showInfo, setShowInfo] = useState(false)
-  const worldRef                = useRef(null)
+  const [showInfo, setShowInfo]   = useState(false)
+  const worldRef                  = useRef(null)
 
-  // load candles
+  // 1) Load all candles
   useEffect(() => {
     supabase
       .from('candles')
@@ -43,7 +43,7 @@ export default function Home() {
       .then(({ data }) => data && setCandles(data))
   }, [])
 
-  // center scroll
+  // 2) Center the scrollable world
   useEffect(() => {
     const el = worldRef.current
     if (!el) return
@@ -53,7 +53,7 @@ export default function Home() {
     })
   }, [])
 
-  // click world to place
+  // 3) Place a new candle
   const handleWorldClick = async e => {
     if (!isPlacing) return
     setIsPlacing(false)
@@ -70,7 +70,7 @@ export default function Home() {
 
     if (!error && Array.isArray(data)) {
       setCandles(prev => {
-        // open modal on that new candle, store click coords
+        // open modal at click point
         setModal({
           open:     true,
           index:    oldLen,
@@ -87,7 +87,7 @@ export default function Home() {
     }
   }
 
-  // submit letter + flag
+  // 4) Submit letter + flag
   const submitModal = async () => {
     const { index, id, text, country } = modal
     setCandles(prev => {
@@ -102,7 +102,7 @@ export default function Home() {
       .eq('id', id)
     setModal({
       open: false, index: null, id: null,
-      text: '', country: '', pointerX: 0, pointerY: 0
+      text: '', country: '', pointerX:0, pointerY:0
     })
   }
 
@@ -143,11 +143,11 @@ export default function Home() {
           <div
             onClick={e => e.stopPropagation()}
             style={{
-              position:   'absolute',
-              top:        48,
-              left:       12,
-              width:      300,
-              background: '#fff',
+              position:     'absolute',
+              top:          48,
+              left:         12,
+              width:        300,
+              background:   '#fff',
               borderRadius: 6,
               padding:      16,
               fontFamily:   'Noto Sans, sans-serif',
@@ -157,10 +157,11 @@ export default function Home() {
             }}
           >
             <p style={{ margin: 0 }}>
-              Prolonged war, deep loss, grief, fear, hope and eternal love. I feel so much every
-              day, especially given the state of affairs of the world. This is an attempt to create a
-              digital space for global solidarity and accessing communal power in a small way. Light a
-              Candle is a scream into the void.
+              Prolonged war, deep loss, grief, fear, hope and eternal love. I feel
+              so much every day, especially given the state of affairs of the world.
+              This is an attempt to create a digital space for global solidarity and
+              accessing communal power in a small way. Light a Candle is a scream
+              into the void.
             </p>
             <p style={{ marginTop: 12, fontSize: 12, color: '#555' }}>
               Created with ❤️ by Anahat Kaur<br/>2025 Berlin
@@ -198,11 +199,11 @@ export default function Home() {
               }}
               onMouseLeave={() => setHover(h => ({ ...h, visible: false }))}
               style={{
-                position:    'absolute',
-                left:        c.x,
-                top:         c.y,
-                transform:   'translate(-50%, -100%)',
-                textAlign:   'center'
+                position:  'absolute',
+                left:       c.x,
+                top:        c.y,
+                transform: 'translate(-50%, -100%)',
+                textAlign: 'center'
               }}
             >
               <img
@@ -210,32 +211,45 @@ export default function Home() {
                 alt="User Candle"
                 style={{ height: 60, width: 'auto' }}
               />
+              {/* tighten gap to flag */}
               {c.country_code && (
-                <div style={{ fontSize: 18, marginTop: 4 }}>
+                <div style={{ fontSize: 18, marginTop: 2 }}>
                   {flagEmoji(c.country_code)}
                 </div>
               )}
             </div>
           ))}
 
-          {/* tooltip without shadow */}
+          {/* tooltip (speech tail + no shadow) */}
           {hover.visible && (
             <div
               style={{
-                position:    'absolute',
-                left:        hover.x + 20,
-                top:         hover.y - 30,
-                background:  '#f7f1e8',   // warm grey
-                color:       '#5a3e2b',
-                padding:     '12px 16px',
-                borderRadius:6,
+                position:     'absolute',
+                left:         hover.x + 20,
+                top:          hover.y - 80,           // further up
+                background:   '#f7f1e8',
+                color:        '#5a3e2b',
+                padding:      '12px 16px',
+                borderRadius: 8,
                 pointerEvents:'none',
-                maxWidth:    200,
-                fontFamily:  'Noto Sans, sans-serif',
-                fontSize:    14,
-                lineHeight:  1.4
+                maxWidth:     200,
+                fontFamily:   'Noto Sans, sans-serif',
+                fontSize:     14,
+                lineHeight:   1.4
               }}
             >
+              {/* tail */}
+              <div style={{
+                position:    'absolute',
+                bottom:      -10,
+                left:        '50%',
+                transform:   'translateX(-50%)',
+                width:       0,
+                height:      0,
+                borderLeft:  '6px solid transparent',
+                borderRight: '6px solid transparent',
+                borderTop:   '10px solid #f7f1e8'
+              }}/>
               <div style={{ marginBottom: 6 }}>{hover.text}</div>
               <div style={{ fontSize: 12, opacity: 0.8 }}>{hover.date}</div>
             </div>
@@ -247,13 +261,13 @@ export default function Home() {
       <div
         onClick={e => { e.stopPropagation(); setIsPlacing(true) }}
         style={{
-          position:    'fixed',
-          top:         '50%',
-          left:        '50%',
-          transform:   'translate(-50%, -50%)',
-          textAlign:   'center',
-          cursor:      'pointer',
-          zIndex:      500
+          position:  'fixed',
+          top:       '50%',
+          left:      '50%',
+          transform: 'translate(-50%, -50%)',
+          textAlign: 'center',
+          cursor:    'pointer',
+          zIndex:    500
         }}
       >
         <img
@@ -261,15 +275,13 @@ export default function Home() {
           alt="Main Candle"
           style={{ height: 60, width: 'auto' }}
         />
-        <p
-          style={{
-            marginTop: 8,
-            color:     '#333',
-            fontFamily:'Noto Sans, sans-serif',
-            fontSize:  15,
-            lineHeight:1.4
-          }}
-        >
+        <p style={{
+          marginTop: 8,
+          color:     '#333',
+          fontFamily:'Noto Sans, sans-serif',
+          fontSize:  15,
+          lineHeight:1.4
+        }}>
           Click to light your candle,<br/>
           place it anywhere in this space,<br/>
           write a note or read one.
@@ -277,26 +289,23 @@ export default function Home() {
       </div>
 
       {/* total counter */}
-      <div
-        style={{
-          position:    'fixed',
-          bottom:      12,
-          right:       12,
-          background:  'rgba(255,255,255,0.8)',
-          padding:     '6px 10px',
-          borderRadius:4,
-          fontFamily:  'Noto Sans, sans-serif',
-          fontSize:    14,
-          zIndex:      1000
-        }}
-      >
+      <div style={{
+        position:     'fixed',
+        bottom:       12,
+        right:        12,
+        background:   'rgba(255,255,255,0.8)',
+        padding:      '6px 10px',
+        borderRadius: 4,
+        fontFamily:   'Noto Sans, sans-serif',
+        fontSize:     14,
+        zIndex:       1000
+      }}>
         Total candles: {candles.length}
       </div>
 
-      {/* letter speech‑bubble modal */}
+      {/* speech‑bubble letter modal */}
       {modal.open && (
         <>
-          {/* transparent backdrop to catch clicks */}
           <div
             onClick={() => setModal({
               open: false, index: null, id: null,
@@ -310,41 +319,38 @@ export default function Home() {
             }}
           />
 
-          {/* bubble at click location */}
           <div
             onClick={e => e.stopPropagation()}
             style={{
-              position:        'fixed',
-              top:             modal.pointerY,
-              left:            modal.pointerX,
-              transform:       'translate(-50%, -110%)',
-              background:      '#f7f1e8',
-              borderRadius:    16,
-              padding:         '16px',
-              maxWidth:        280,
-              fontFamily:      'Noto Sans, sans-serif',
-              fontSize:        14,
-              lineHeight:      1.4,
-              zIndex:          900
+              position:     'fixed',
+              top:          modal.pointerY,
+              left:         modal.pointerX,
+              transform:    'translate(-50%, -120%)',
+              background:   '#f7f1e8',
+              borderRadius: 16,
+              padding:      '16px',
+              maxWidth:     280,
+              fontFamily:   'Noto Sans, sans-serif',
+              fontSize:     14,
+              lineHeight:   1.4,
+              zIndex:       900
             }}
           >
-            {/* little tail */}
-            <div
-              style={{
-                position:       'absolute',
-                bottom:         -12,
-                left:           '50%',
-                transform:      'translateX(-50%)',
-                width:          0,
-                height:         0,
-                borderLeft:     '8px solid transparent',
-                borderRight:    '8px solid transparent',
-                borderTop:      '12px solid #f7f1e8'
-              }}
-            />
+            {/* tail */}
+            <div style={{
+              position:    'absolute',
+              bottom:      -12,
+              left:        '50%',
+              transform:   'translateX(-50%)',
+              width:       0,
+              height:      0,
+              borderLeft:  '8px solid transparent',
+              borderRight: '8px solid transparent',
+              borderTop:   '12px solid #f7f1e8'
+            }}/>
 
             <h4 style={{ margin: '0 0 8px', fontWeight: 400 }}>
-              Write your letter
+              Write your message (you cannot undo this)
             </h4>
 
             <textarea
@@ -364,7 +370,7 @@ export default function Home() {
               }}
             />
 
-            {/* move flag dropdown below */}
+            {/* flag dropdown below */}
             <select
               value={modal.country}
               onChange={e => setModal(m => ({
@@ -387,9 +393,9 @@ export default function Home() {
             </select>
 
             <div style={{
-              textAlign: 'right',
-              fontSize:  12,
-              color:     '#666',
+              textAlign:   'right',
+              fontSize:    12,
+              color:       '#666',
               marginBottom:'8px'
             }}>
               {modal.text.length}/200
@@ -402,7 +408,7 @@ export default function Home() {
                 background:    '#d2691e',
                 color:         '#fff',
                 border:        'none',
-                borderRadius: 4,
+                borderRadius:  4,
                 cursor:        'pointer',
                 float:         'right'
               }}
