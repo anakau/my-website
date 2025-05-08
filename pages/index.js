@@ -11,7 +11,7 @@ export default function Home() {
   const [showInfo, setShowInfo] = useState(false);
   const containerRef = useRef(null);
 
-  // Fetch *all* candles (no cutoff)
+  // Fetch all candles
   useEffect(() => {
     (async () => {
       const { data, error } = await supabase
@@ -32,7 +32,7 @@ export default function Home() {
     });
   }, []);
 
-  // Place a new candle at click location
+  // Place a new candle
   const handleScreenClick = async (e) => {
     if (!isPlacing) return setIsPlacing(false);
     setIsPlacing(false);
@@ -46,7 +46,7 @@ export default function Home() {
     if (!error && Array.isArray(data)) setCandles(prev => [...prev, ...data]);
   };
 
-  // Open & populate the letter modal
+  // Open and populate the letter modal
   const openModal = (index, id) => {
     setModal({ open: true, index, id, text: candles[index].note || '' });
   };
@@ -124,7 +124,8 @@ export default function Home() {
               communal power in a small way. Light a Candle is a scream into the void.
             </p>
             <p style={{ margin: '12px 0 0', fontSize: '0.8rem', color: '#555' }}>
-              Created with ❤️ by Anahat Kaur<br/>2025 Berlin
+              Created with ❤️ by Anahat Kaur
+              <br />2025 Berlin
             </p>
           </div>
         </div>
@@ -198,7 +199,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Central candle + random-length sunburst */}
+      {/* Central candle + sunburst */}
       <div
         onClick={e => { e.stopPropagation(); setIsPlacing(true); }}
         style={{
@@ -389,6 +390,25 @@ export default function Home() {
           </div>
         </div>
       )}
+
+      {/* Total candles counter */}
+      <div
+        style={{
+          position: 'fixed',
+          bottom: 12,
+          right: 12,
+          background: '#fff',
+          padding: '8px 12px',
+          borderRadius: 4,
+          boxShadow: '0 1px 4px rgba(0,0,0,0.1)',
+          fontFamily: 'Noto Sans, sans-serif',
+          fontSize: '0.9rem',
+          color: '#333',
+          zIndex: 200,
+        }}
+      >
+        Total candles: {candles.length}
+      </div>
     </>
   );
 }
