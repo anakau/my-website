@@ -2,39 +2,31 @@
 import { useState, useEffect, useRef } from 'react'
 import Head from 'next/head'
 import { supabase } from '../lib/supabaseClient'
-import countries from 'i18n-iso-countries'
-import enLocale from 'i18n-iso-countries/langs/en.json'
-
-// Prepare country list
-countries.registerLocale(enLocale)
-const COUNTRY_LIST = Object.entries(
-  countries.getNames('en', { select: 'official' })
-).sort((a, b) => a[1].localeCompare(b[1]))
-
-// 🇺🇸 emoji from "US" code
-function flagEmoji(cc) {
-  return cc
-    .toUpperCase()
-    .replace(/./g, c =>
-      String.fromCodePoint(0x1f1e6 - 65 + c.charCodeAt(0))
-    )
-}
 
 export default function Home() {
   const [candles, setCandles]     = useState([])
   const [isPlacing, setIsPlacing] = useState(false)
-  const [dragPos, setDragPos]     = useState(null) // { x, y } when dragging
+  const [dragPos, setDragPos]     = useState(null)
   const [modal, setModal]         = useState({
-    open: false, index: null, id: null,
-    text: '', country: '', x: 0, y: 0
+    open: false,
+    index: null,
+    id: null,
+    text: '',
+    emoji: '',   // ← now holds the chosen emoji
+    x: 0,
+    y: 0
   })
-  const [hover, setHover]         = useState({
-    visible: false, x: 0, y: 0, text: '', date: ''
+  const [hover, setHover]       = useState({
+    visible: false,
+    x: 0,
+    y: 0,
+    text: '',
+    date: ''
   })
-  const [showInfo, setShowInfo]   = useState(false)
-  const worldRef                  = useRef(null)
+  const [showInfo, setShowInfo] = useState(false)
+  const worldRef                = useRef(null)
 
-  // 1) Load all candles once
+  // Load candles once
   useEffect(() => {
     supabase
       .from('candles')
@@ -45,7 +37,7 @@ export default function Home() {
       })
   }, [])
 
-  // 2) Center scrollable world
+  // Center world on mount
   useEffect(() => {
     const el = worldRef.current
     if (!el) return
@@ -55,20 +47,23 @@ export default function Home() {
     })
   }, [])
 
-  // 3) When clicking center candle, enter placing mode
-  const startPlacing = (e) => {
+  // Start placing mode
+  const startPlacing = e => {
     e.stopPropagation()
     setIsPlacing(true)
   }
 
-  // 4) Preview ghost candle under cursor while placing
-  const handleMouseMove = (e) => {
-    if (!isPlacing) return
-    setDragPos({ x: e.clientX, y: e.clientY })
-  }
+  // Ghost preview follow
+  useEffect(() => {
+    const onMove = e => {
+      if (isPlacing) setDragPos({ x: e.clientX, y: e.clientY })
+    }
+    window.addEventListener('mousemove', onMove)
+    return () => window.removeEventListener('mousemove', onMove)
+  }, [isPlacing])
 
-  // 5) Place candle on click in world
-  const handleWorldClick = async (e) => {
+  // Place candle
+  const handleWorldClick = async e => {
     if (!isPlacing) return
     setIsPlacing(false)
     setDragPos(null)
@@ -77,50 +72,47 @@ export default function Home() {
     const x = e.clientX - rect.left + worldRef.current.scrollLeft
     const y = e.clientY - rect.top  + worldRef.current.scrollTop
 
-    const idxBefore = candles.length
+    const before = candles.length
     const { data, error } = await supabase
       .from('candles')
       .insert([{ x, y, note: '', country_code: '' }])
       .select()
 
-    if (!error && Array.isArray(data)) {
+    if (!error && data?.length) {
       const newRow = data[0]
-      setCandles(prev => {
-        // open modal on that new candle
-        setModal({
-          open: true,
-          index: idxBefore,
-          id: newRow.id,
-          text: '',
-          country: '',
-          x: e.clientX,
-          y: e.clientY
-        })
-        return [...prev, newRow]
+      setCandles(prev => [...prev, newRow])
+      setModal({
+        open: true,
+        index: before,
+        id: newRow.id,
+        text: '',
+        emoji: '',
+        x: e.clientX,
+        y: e.clientY + 60 + 4   // drop below flag position
       })
     } else {
       console.error(error)
     }
   }
 
-  // 6) Submit letter and country
+  // Submit letter + emoji
   const submitModal = async () => {
-    const { index, id, text, country } = modal
+    const { index, id, text, emoji } = modal
     setCandles(prev => {
-      const cp = [...prev]
-      cp[index].note = text
-      cp[index].country_code = country
-      return cp
+      const copy = [...prev]
+      copy[index].note         = text
+      copy[index].country_code = emoji
+      return copy
     })
     await supabase
       .from('candles')
-      .update({ note: text, country_code: country })
+      .update({ note: text, country_code: emoji })
       .eq('id', id)
-    setModal({ open: false, index: null, id: null, text: '', country: '', x: 0, y: 0 })
+    setModal({ open: false, index: null, id: null, text: '', emoji: '', x: 0, y: 0 })
   }
 
-  // 7) Hover tooltip for existing candles
-  const showTooltip = (c) => {
+  // Hover tooltip
+  const showTooltip = c => {
     setHover({
       visible: true,
       x: c.x,
@@ -129,11 +121,7 @@ export default function Home() {
       date: new Date(c.created_at).toLocaleString()
     })
   }
-
-  // 8) Cleanup hover
-  const hideTooltip = () => {
-    setHover(h => ({ ...h, visible: false }))
-  }
+  const hideTooltip = () => setHover(h => ({ ...h, visible: false }))
 
   return (
     <>
@@ -141,23 +129,20 @@ export default function Home() {
         <title>Light a Candle · space</title>
       </Head>
 
-      {/* Info toggle (top‑left) */}
+      {/* Info toggle */}
       <button
         onClick={() => setShowInfo(v => !v)}
         style={{
-          position: 'fixed', top: 12, left: 12,
+          position: 'fixed', top: 12, left: 12, zIndex: 1000,
           padding: '8px 12px',
           background: '#fff', color: '#d2691e',
           border: 'none', textDecoration: 'underline',
           cursor: 'pointer',
-          fontFamily: 'Noto Sans, sans-serif', fontSize: 16,
-          zIndex: 1000,
+          fontFamily: 'Noto Sans, sans-serif', fontSize: 16
         }}
       >
         light a candle . space
       </button>
-
-      {/* Info pop‑over with no line‑breaks */}
       {showInfo && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 900 }}>
           <div
@@ -167,8 +152,10 @@ export default function Home() {
           <div
             onClick={e => e.stopPropagation()}
             style={{
-              position: 'absolute', top: 48, left: 12,
-              width: 300, background: '#f2f2f2',
+              position: 'absolute',
+              top: 48, left: 12,
+              width: 300,
+              background: '#f2f2f2',
               borderRadius: 6, padding: 16,
               boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
               fontFamily: 'Noto Sans, sans-serif',
@@ -187,10 +174,11 @@ export default function Home() {
       <div
         ref={worldRef}
         onClick={handleWorldClick}
-        onMouseMove={handleMouseMove}
         style={{
-          width: '100vw', height: '100vh',
-          overflow: 'auto', background: '#fff',
+          width: '100vw',
+          height: '100vh',
+          overflow: 'auto',
+          background: '#fff',
           cursor: isPlacing ? 'crosshair' : 'default'
         }}
       >
@@ -211,10 +199,10 @@ export default function Home() {
               {c.country_code && (
                 <div style={{
                   fontSize: 18,
-                  marginTop: 2,          // very tight under candle
+                  marginTop: 2,
                   lineHeight: 1
                 }}>
-                  {flagEmoji(c.country_code)}
+                  {c.country_code /* now renders the chosen emoji */}
                 </div>
               )}
             </div>
@@ -240,16 +228,14 @@ export default function Home() {
                 zIndex: 400
               }}
             >
-              {/* little arrow pointing up at the flag */}
               <div style={{
                 position: 'absolute',
                 bottom: -10, left: '50%',
                 transform: 'translateX(-50%)',
-                width: 0, height: 0,
                 borderLeft: '8px solid transparent',
-                borderRight:'8px solid transparent',
+                borderRight: '8px solid transparent',
                 borderTop: '10px solid #f2f2f2'
-              }}/>
+              }} />
               <div style={{ marginBottom: 6 }}>{hover.text}</div>
               <div style={{ fontSize: 12, opacity: 0.8 }}>{hover.date}</div>
             </div>
@@ -265,47 +251,51 @@ export default function Home() {
           top: '50%', left: '50%',
           transform: 'translate(-50%, -50%)',
           textAlign: 'center',
-          zIndex: 500
+          zIndex: 500,
+          cursor: 'grab'
         }}
       >
         <div style={{ position: 'relative', width: 60, height: 60, margin: '0 auto' }}>
-          {/* Sunburst */}
           <svg
             viewBox="0 0 100 100"
             style={{
               position: 'absolute',
               top: '50%', left: '50%',
-              transform:'translate(-50%,-50%)',
+              transform: 'translate(-50%,-50%)',
               width: 140, height: 140,
               pointerEvents: 'none'
             }}
           >
             {[...Array(24)].map((_, i) => {
-              const angle = (i/24)*Math.PI*2
-              const inner = 30, outer = inner + Math.random()*30 + 10
-              const x1 = 50 + Math.cos(angle)*inner
-              const y1 = 50 + Math.sin(angle)*inner
-              const x2 = 50 + Math.cos(angle)*outer
-              const y2 = 50 + Math.sin(angle)*outer
+              const angle = (i / 24) * Math.PI * 2
+              const inner = 30, outer = inner + Math.random() * 30 + 10
+              const x1 = 50 + Math.cos(angle) * inner
+              const y1 = 50 + Math.sin(angle) * inner
+              const x2 = 50 + Math.cos(angle) * outer
+              const y2 = 50 + Math.sin(angle) * outer
               return (
-                <line key={i}
+                <line
+                  key={i}
                   x1={x1} y1={y1} x2={x2} y2={y2}
-                  stroke="#ddd" strokeWidth={0.5}
+                  stroke="#ddd"
+                  strokeWidth={0.5}
                 />
               )
             })}
           </svg>
-          {/* Candle */}
-          <img src="/candle.gif"
+          <img
+            src="/candle.gif"
             alt=""
-            style={{ position:'relative', height:60, width:'auto', zIndex:1 }}
+            style={{ position: 'relative', height: 60, width: 'auto', zIndex: 1 }}
           />
         </div>
         <p style={{
-          marginTop:8, color:'#333',
-          fontFamily:'Noto Sans, sans-serif',
-          fontSize:15, lineHeight:1.4,
-          zIndex:2
+          marginTop: 8,
+          color: '#333',
+          fontFamily: 'Noto Sans, sans-serif',
+          fontSize: 15,
+          lineHeight: 1.4,
+          zIndex: 2
         }}>
           Click to light your candle,<br/>
           place it anywhere in this space,<br/>
@@ -313,121 +303,137 @@ export default function Home() {
         </p>
       </div>
 
-      {/* Ghost preview while placing */}
+      {/* Ghost preview */}
       {isPlacing && dragPos && (
         <img
           src="/candle.gif"
           alt="Ghost Candle"
           style={{
-            position:'fixed',
-            left:dragPos.x, top:dragPos.y,
-            transform:'translate(-50%,-100%)',
-            height:60, width:'auto',
-            opacity:0.6,
-            pointerEvents:'none',
-            zIndex:450
+            position: 'fixed',
+            left: dragPos.x,
+            top: dragPos.y,
+            transform: 'translate(-50%,-100%)',
+            height: 60,
+            width: 'auto',
+            opacity: 0.6,
+            pointerEvents: 'none',
+            zIndex: 450
           }}
         />
       )}
 
-      {/* Total count (bottom‑right) */}
+      {/* Total count */}
       <div style={{
-        position:'fixed', bottom:12, right:12,
-        background:'rgba(255,255,255,0.9)',
-        padding:'6px 10px', borderRadius:4,
-        fontFamily:'Noto Sans, sans-serif',
-        fontSize:14, color:'#000',
-        zIndex:1000
+        position: 'fixed',
+        bottom: 12,
+        right: 12,
+        background: 'rgba(255,255,255,0.9)',
+        padding: '6px 10px',
+        borderRadius: 4,
+        fontFamily: 'Noto Sans, sans-serif',
+        fontSize: 14,
+        color: '#000',   // ← pure black
+        zIndex: 1000
       }}>
         Total candles: {candles.length}
       </div>
 
-      {/* Letter modal bubble (appears under flag) */}
+      {/* Letter modal under flag */}
       {modal.open && (
         <>
-          {/* Backdrop */}
+          {/* backdrop */}
           <div
             onClick={() => setModal({
-              open:false, index:null, id:null,
-              text:'', country:'', x:0, y:0
+              open: false, index: null, id: null,
+              text: '', emoji: '', x: 0, y: 0
             })}
-            style={{ position:'fixed', inset:0, zIndex:800 }}
+            style={{ position: 'fixed', inset: 0, zIndex: 800 }}
           />
-          {/* Modal positioned below the flag */}
+          {/* modal bubble */}
           <div
-            onClick={e=>e.stopPropagation()}
+            onClick={e => e.stopPropagation()}
             style={{
-              position:'fixed',
-              left:modal.x, top:modal.y,
-              transform:'translate(-50%,0)',  // align top of bubble with flag
-              background:'#f2f2f2',
-              borderRadius:12,
-              padding:16,
-              maxWidth:300,
-              fontFamily:'Noto Sans, sans-serif',
-              fontSize:14,
-              zIndex:810
+              position: 'fixed',
+              left: modal.x,
+              top: modal.y,
+              transform: 'translate(-50%, 0)',
+              background: '#f2f2f2',
+              borderRadius: 12,
+              padding: 16,
+              maxWidth: 300,
+              fontFamily: 'Noto Sans, sans-serif',
+              fontSize: 14,
+              color: '#000',
+              zIndex: 810
             }}
           >
-            {/* little pointer up */}
+            {/* arrow UP */}
             <div style={{
-              position:'absolute', top:-10, left:'50%',
-              transform:'translateX(-50%)',
-              width:0, height:0,
-              borderLeft:'8px solid transparent',
-              borderRight:'8px solid transparent',
-              borderBottom:'10px solid #f2f2f2'
+              position: 'absolute', top: -10, left: '50%',
+              transform: 'translateX(-50%)',
+              width: 0, height: 0,
+              borderLeft: '8px solid transparent',
+              borderRight: '8px solid transparent',
+              borderBottom: '10px solid #f2f2f2'
             }}/>
-            <h4 style={{ margin:'0 0 8px', fontWeight:400 }}>Write a letter</h4>
-            <div style={{ margin:'0 0 12px', color:'#555' }}>
+            <h4 style={{ margin: '0 0 8px', fontWeight: 400, color: '#555' }}>
+              Write a letter
+            </h4>
+            <div style={{ margin: '0 0 12px', color: '#555' }}>
               This cannot be undone
             </div>
             <textarea
               rows={4}
               placeholder="Your message…"
               value={modal.text}
-              onChange={e=>
-                setModal(m=>({...m, text:e.target.value.slice(0,200)}))
+              onChange={e =>
+                setModal(m => ({ ...m, text: e.target.value.slice(0, 200) }))
               }
               style={{
-                width:'100%', padding:8,
-                border:'1px solid #ddd', borderRadius:4,
-                background:'#fff', color:'#000',
-                marginBottom:12, resize:'vertical'
+                width: '100%',
+                padding: 8,
+                border: '1px solid #ddd',
+                borderRadius: 4,
+                background: '#fff',
+                color: '#000',
+                marginBottom: 12,
+                resize: 'vertical'
               }}
             />
-            <div style={{
-              textAlign:'right', fontSize:12,
-              color:'#666', marginBottom:12
-            }}>
+            <div style={{ textAlign: 'right', fontSize: 12, color: '#666', marginBottom: 12 }}>
               {modal.text.length}/200
             </div>
-            <select
-              value={modal.country}
-              onChange={e=>setModal(m=>({...m, country:e.target.value}))}
+            {/* emoji input in place of dropdown */}
+            <input
+              type="text"
+              inputMode="text"
+              placeholder="🌐"
+              value={modal.emoji}
+              onChange={e => setModal(m => ({ ...m, emoji: e.target.value }))}
               style={{
-                width:'100%', padding:6,
-                border:'0.5px solid rgba(0,0,0,0.5)',
-                borderRadius:4, background:'#fff',
-                marginBottom:12,
-                appearance:'none'
+                width: '100%',
+                padding: 6,
+                marginBottom: 12,
+                background: '#fff',
+                border: '0.5px solid rgba(0,0,0,0.5)',
+                borderRadius: 4,
+                fontSize: 14,
+                fontFamily: 'Noto Sans, sans-serif',
+                color: '#000',
+                appearance: 'none'
               }}
-            >
-              <option value="">— Select country —</option>
-              {COUNTRY_LIST.map(([code,name])=>(
-                <option key={code} value={code}>
-                  {flagEmoji(code)} {name}
-                </option>
-              ))}
-            </select>
+            />
             <button
               onClick={submitModal}
               style={{
-                display:'block', margin:'0 auto',
-                padding:'8px 16px',
-                background:'#000', color:'#fff',
-                border:'none', borderRadius:4,
-                cursor:'pointer'
+                display: 'block',
+                margin: '0 auto',
+                padding: '8px 16px',
+                background: '#000',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 4,
+                cursor: 'pointer'
               }}
             >
               Share Letter
