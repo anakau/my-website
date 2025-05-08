@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabaseClient'
 import countries from 'i18n-iso-countries'
 import enLocale from 'i18n-iso-countries/langs/en.json'
 
-// Register English locale and build sorted list
+// Register English locale and prepare sorted list
 countries.registerLocale(enLocale)
 const COUNTRY_LIST = Object.entries(
   countries.getNames('en', { select: 'official' })
@@ -23,21 +23,25 @@ export default function Home() {
   const [candles, setCandles]     = useState([])
   const [isPlacing, setIsPlacing] = useState(false)
   const [modal, setModal]         = useState({
-    open: false, index: null, id: null, text: '', country:'', x:0, y:0
+    open: false, index: null, id: null,
+    text: '', country:'', x:0, y:0
   })
   const [hover, setHover]         = useState({
-    visible: false, x: 0, y: 0, text: '', date: ''
+    visible: false, x:0, y:0, text:'', date:''
   })
   const [showInfo, setShowInfo]   = useState(false)
   const worldRef                  = useRef(null)
 
-  // load all candles
+  // Load all candles
   useEffect(() => {
-    supabase.from('candles').select('*').order('created_at', { ascending: true })
+    supabase
+      .from('candles')
+      .select('*')
+      .order('created_at', { ascending: true })
       .then(({ data }) => data && setCandles(data))
   }, [])
 
-  // center scroll on mount
+  // Center scroll area
   useEffect(() => {
     const el = worldRef.current
     if (!el) return
@@ -47,10 +51,11 @@ export default function Home() {
     })
   }, [])
 
-  // place a new candle
+  // Place new candle, then open its bubble at click point
   const handleWorldClick = async e => {
     if (!isPlacing) return
     setIsPlacing(false)
+
     const rect = worldRef.current.getBoundingClientRect()
     const x = e.clientX - rect.left + worldRef.current.scrollLeft
     const y = e.clientY - rect.top  + worldRef.current.scrollTop
@@ -60,28 +65,30 @@ export default function Home() {
       .from('candles')
       .insert([{ x, y, note:'', country_code:'' }])
       .select()
+
     if (!error && data?.length) {
+      const row = data[0]
       setCandles(prev => {
         setModal({
           open: true,
           index: oldLen,
-          id: data[0].id,
+          id: row.id,
           text: '',
-          country:'',
+          country: '',
           x: e.clientX,
           y: e.clientY
         })
-        return [...prev, ...data]
+        return [...prev, row]
       })
     }
   }
 
-  // submit letter + country
+  // Submit letter + flag
   const submitModal = async () => {
     const { index, id, text, country } = modal
     setCandles(prev => {
       const cp = [...prev]
-      cp[index].note         = text
+      cp[index].note = text
       cp[index].country_code = country
       return cp
     })
@@ -94,16 +101,14 @@ export default function Home() {
 
   return (
     <>
-      <Head>
-        <title>Light a Candle · space</title>
-      </Head>
+      <Head><title>Light a Candle · space</title></Head>
 
       {/* Info button */}
       <button
-        onClick={() => setShowInfo(v => !v)}
+        onClick={()=>setShowInfo(v=>!v)}
         style={{
-          position: 'fixed', top:12, left:12,
-          padding: '8px 12px',
+          position:'fixed', top:12, left:12,
+          padding:'8px 12px',
           background:'#fff', color:'#d2691e',
           border:'none', textDecoration:'underline',
           cursor:'pointer',
@@ -114,7 +119,7 @@ export default function Home() {
         light a candle . space
       </button>
 
-      {/* Info pop‑over */}
+      {/* Info popover */}
       {showInfo && (
         <div style={{ position:'fixed', inset:0, zIndex:900 }}>
           <div
@@ -125,13 +130,11 @@ export default function Home() {
             onClick={e=>e.stopPropagation()}
             style={{
               position:'absolute', top:48, left:12,
-              width:300,
-              background:'#f2f2f2',   // light grey
-              borderRadius:6,
-              padding:16,
+              width:300, background:'#f2f2f2',
+              borderRadius:6, padding:16,
+              boxShadow:'0 2px 8px rgba(0,0,0,0.1)',
               fontFamily:'Noto Sans, sans-serif',
-              fontSize:14, lineHeight:1.4,
-              color:'#333'
+              fontSize:14, lineHeight:1.4, color:'#333'
             }}
           >
             <p style={{ margin:0 }}>
@@ -155,8 +158,7 @@ export default function Home() {
         style={{
           width:'100vw', height:'100vh',
           overflow:'auto', background:'#fff',
-          position:'relative',
-          cursor:isPlacing ? 'crosshair':'default'
+          cursor:isPlacing?'crosshair':'default'
         }}
       >
         <div style={{ width:3000, height:2000, position:'relative' }}>
@@ -186,7 +188,7 @@ export default function Home() {
                 style={{ height:60, width:'auto' }}
               />
               {c.country_code && (
-                <div style={{ fontSize:18, marginTop:0 }}>
+                <div style={{ fontSize:18, marginTop:4 }}>
                   {flagEmoji(c.country_code)}
                 </div>
               )}
@@ -198,9 +200,10 @@ export default function Home() {
             <div
               style={{
                 position:'absolute',
-                left: hover.x + 20,
-                top:  hover.y - 140,       // lifted above
-                background:'#f7f1e8',
+                left: hover.x,
+                top:  hover.y,
+                transform:'translate(-50%,-110%)',
+                background:'#f2f2f2',
                 color:'#5a3e2b',
                 padding:'12px 16px',
                 borderRadius:8,
@@ -211,7 +214,6 @@ export default function Home() {
                 lineHeight:1.4
               }}
             >
-              {/* tail */}
               <div style={{
                 position:'absolute',
                 bottom:-12,
@@ -220,7 +222,7 @@ export default function Home() {
                 width:0, height:0,
                 borderLeft:'8px solid transparent',
                 borderRight:'8px solid transparent',
-                borderTop:'12px solid #f7f1e8'
+                borderTop:'12px solid #f2f2f2'
               }}/>
               <div style={{ marginBottom:6 }}>{hover.text}</div>
               <div style={{ fontSize:12, opacity:0.8 }}>{hover.date}</div>
@@ -231,13 +233,12 @@ export default function Home() {
 
       {/* Central candle */}
       <div
-        onClick={e=>{e.stopPropagation(); setIsPlacing(true)}}
+        onClick={e=>{ e.stopPropagation(); setIsPlacing(true) }}
         style={{
           position:'fixed',
           top:'50%', left:'50%',
           transform:'translate(-50%,-50%)',
           textAlign:'center',
-          cursor:'pointer',
           zIndex:500
         }}
       >
@@ -272,23 +273,21 @@ export default function Home() {
         Total candles: {candles.length}
       </div>
 
-      {/* Letter modal */}
+      {/* Letter modal above the candle, light grey bubble + white textarea */}
       {modal.open && (
         <>
-          {/* click‐away block */}
           <div
             onClick={()=>setModal({open:false,index:null,id:null,text:'',country:'',x:0,y:0})}
-            style={{ position:'fixed', inset:0, background:'transparent', zIndex:800 }}
+            style={{ position:'fixed', inset:0, zIndex:800 }}
           />
-          {/* bubble at click‐point */}
           <div
             onClick={e=>e.stopPropagation()}
             style={{
               position:'fixed',
-              top: modal.y,
-              left:modal.x,
-              transform:'translate(-50%,-120%)',
-              background:'#f2f2f2',    // match grey
+              left: modal.x,
+              top:  modal.y,
+              transform:'translate(-50%,-100%)',
+              background:'#f2f2f2',        /* same light grey */
               borderRadius:16,
               padding:16,
               maxWidth:280,
@@ -298,7 +297,7 @@ export default function Home() {
               zIndex:900
             }}
           >
-            {/* tail */}
+            {/* little tail */}
             <div style={{
               position:'absolute',
               bottom:-12,
@@ -318,7 +317,7 @@ export default function Home() {
               rows={4}
               placeholder="Your message…"
               value={modal.text}
-              onChange={e=>setModal(m=>({...m, text:e.target.value.slice(0,200)}))}
+              onChange={e=>setModal(m=>({...m,text:e.target.value.slice(0,200)}))}
               style={{
                 width:'100%',
                 padding:8,
@@ -326,10 +325,14 @@ export default function Home() {
                 borderRadius:4,
                 marginBottom:12,
                 resize:'vertical',
-                background:'#f2f2f2',  // match
+                background:'#fff',        /* white text box */
                 color:'#000'
               }}
             />
+
+            <div style={{ textAlign:'right', fontSize:12, color:'#666', marginBottom:8 }}>
+              {modal.text.length}/200
+            </div>
 
             <select
               value={modal.country}
@@ -340,7 +343,7 @@ export default function Home() {
                 border:'1px solid #ddd',
                 borderRadius:4,
                 marginBottom:12,
-                background:'#f2f2f2'   // match
+                background:'#fff'         /* white select */
               }}
             >
               <option value="">— Select country —</option>
@@ -350,10 +353,6 @@ export default function Home() {
                 </option>
               ))}
             </select>
-
-            <div style={{ textAlign:'right', fontSize:12, color:'#666', marginBottom:8 }}>
-              {modal.text.length}/200
-            </div>
 
             <button
               onClick={submitModal}
