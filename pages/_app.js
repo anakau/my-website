@@ -1,10 +1,11 @@
 // pages/_app.js
 import { useEffect } from 'react'
 import '../styles/globals.css'
+import { Analytics } from '@vercel/analytics/react'
 
 export default function App({ Component, pageProps }) {
   useEffect(() => {
-    // This function gets called by Google’s script once it loads
+    // 1) Define the callback Google will call once its script loads
     window.googleTranslateElementInit = () => {
       /* global google */
       new google.translate.TranslateElement(
@@ -16,13 +17,13 @@ export default function App({ Component, pageProps }) {
       )
     }
 
-    // Dynamically inject the Google Translate script
+    // 2) Dynamically inject Google's Translate script
     const script = document.createElement('script')
     script.src =
       '//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit'
     document.body.appendChild(script)
 
-    // Cleanup if the component ever unmounts
+    // 3) Clean up on unmount
     return () => {
       delete window.googleTranslateElementInit
       document.body.removeChild(script)
@@ -31,7 +32,7 @@ export default function App({ Component, pageProps }) {
 
   return (
     <>
-      {/* Placeholder for the language selector */}
+      {/* Google Translate target */}
       <div
         id="google_translate_element"
         style={{
@@ -45,7 +46,12 @@ export default function App({ Component, pageProps }) {
           boxShadow: '0 1px 4px rgba(0,0,0,0.3)'
         }}
       />
+
+      {/* Your page content */}
       <Component {...pageProps} />
+
+      {/* Vercel Edge Analytics */}
+      <Analytics />
     </>
   )
 }
