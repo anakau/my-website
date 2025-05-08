@@ -1,19 +1,20 @@
 // pages/index.js
 import { useState, useEffect, useRef } from 'react';
 import Head from 'next/head';
+import countries from 'i18n-iso-countries';
+import enLocale from 'i18n-iso-countries/langs/en.json';
 import { supabase } from '../lib/supabaseClient';
 
-// Minimal list—add more country codes/names as desired
-const COUNTRIES = [
-  { code: 'US', name: 'United States' },
-  { code: 'GB', name: 'United Kingdom' },
-  { code: 'DE', name: 'Germany' },
-  { code: 'FR', name: 'France' },
-  { code: 'IN', name: 'India' },
-  { code: 'JP', name: 'Japan' },
-];
+// register English country names
+countries.registerLocale(enLocale);
+// build [ { code, name }, … ] sorted array
+const COUNTRIES = Object.entries(
+  countries.getNames('en', { select: 'official' })
+)
+  .map(([code, name]) => ({ code, name }))
+  .sort((a, b) => a.name.localeCompare(b.name));
 
-// Convert "US" → 🇺🇸
+// "US" → 🇺🇸
 function flagEmoji(cc) {
   return cc
     .toUpperCase()
@@ -32,7 +33,7 @@ export default function Home() {
     text: '',
     country: '',
   });
-  const [hovered, setHovered] = useState({
+  const [hover, setHover] = useState({
     visible: false,
     x: 0,
     y: 0,
@@ -41,9 +42,9 @@ export default function Home() {
     country: '',
   });
   const [showInfo, setShowInfo] = useState(false);
-  const containerRef = useRef(null);
+  const worldRef = useRef(null);
 
-  // Fetch all candles
+  // fetch all candles (no expiry)
   useEffect(() => {
     (async () => {
       const { data, error } = await supabase
@@ -54,9 +55,9 @@ export default function Home() {
     })();
   }, []);
 
-  // Center the scrollable canvas
+  // center the scrollable world on mount
   useEffect(() => {
-    const el = containerRef.current;
+    const el = worldRef.current;
     if (!el) return;
     requestAnimationFrame(() => {
       el.scrollLeft = (el.scrollWidth - el.clientWidth) / 2;
@@ -64,13 +65,13 @@ export default function Home() {
     });
   }, []);
 
-  // Place a new candle
-  const handleScreenClick = async (e) => {
+  // place a new candle
+  const handleWorldClick = async (e) => {
     if (!isPlacing) return setIsPlacing(false);
     setIsPlacing(false);
-    const rect = containerRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left + containerRef.current.scrollLeft;
-    const y = e.clientY - rect.top + containerRef.current.scrollTop;
+    const rect = worldRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left + worldRef.current.scrollLeft;
+    const y = e.clientY - rect.top + worldRef.current.scrollTop;
     const { data, error } = await supabase
       .from('candles')
       .insert([{ x, y, note: '', country_code: '' }])
@@ -80,29 +81,27 @@ export default function Home() {
     }
   };
 
-  // Open modal and preload text & country
-  const openModal = (index, id) => {
-    const c = candles[index];
+  // open letter modal
+  const openModal = (idx, id) => {
+    const c = candles[idx];
     setModal({
       open: true,
-      index,
+      index: idx,
       id,
       text: c.note || '',
       country: c.country_code || '',
     });
   };
 
-  // Submit text + country
-  const handleModalSubmit = async () => {
+  // submit letter + country
+  const submitModal = async () => {
     const { index, id, text, country } = modal;
-    // Optimistic UI
     setCandles((prev) => {
       const cp = [...prev];
       cp[index].note = text;
       cp[index].country_code = country;
       return cp;
     });
-    // Persist
     await supabase
       .from('candles')
       .update({ note: text, country_code: country })
@@ -113,6 +112,7 @@ export default function Home() {
   return (
     <>
       <Head>
+        <title>Light a Candle • space</title>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
           rel="preconnect"
@@ -125,88 +125,84 @@ export default function Home() {
         />
       </Head>
 
-      {/* Info button */}
+      {/* Info Button */}
       <button
         onClick={() => setShowInfo((v) => !v)}
         style={{
           position: 'fixed',
           top: 12,
           left: 12,
-          width: 160,
-          padding: '10px 0',
+          padding: '8px 12px',
           background: '#fff',
           color: '#d2691e',
           border: 'none',
           textDecoration: 'underline',
           cursor: 'pointer',
           fontFamily: 'Noto Sans, sans-serif',
-          fontSize: '1rem',
-          zIndex: 101,
+          fontSize: '0.9rem',
+          zIndex: 1000,
         }}
       >
         light a candle . space
       </button>
 
-      {/* Info pop‑over */}
+      {/* Info Pop‑over */}
       {showInfo && (
-        <div style={{ position: 'fixed', top: 48, left: 12, zIndex: 100 }}>
-          <div
-            onClick={() => setShowInfo(false)}
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              width: '100vw',
-              height: '100vh',
-            }}
-          />
+        <div
+          onClick={() => setShowInfo(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 900,
+          }}
+        >
           <div
             onClick={(e) => e.stopPropagation()}
             style={{
+              position: 'absolute',
+              top: 48,
+              left: 12,
               background: '#fff',
-              padding: 18,
+              padding: 16,
               borderRadius: 6,
               boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
               width: 300,
               fontFamily: 'Noto Sans, sans-serif',
-              fontSize: '0.95rem',
-              lineHeight: 1.4,
+              fontSize: '0.9rem',
               color: '#333',
             }}
           >
             <p style={{ margin: 0 }}>
-              Prolonged war, deep loss, grief, fear, hope and eternal love. I feel
-              so much every day, especially given the state of affairs of the
-              world. This is an attempt to create a digital space for global
-              solidarity and accessing communal power in a small way. Light a
-              Candle is a scream into the void.
+              Prolonged war, deep loss, grief, fear, hope and eternal love. I feel so
+              much every day, especially given the state of affairs of the world.
+              This is an attempt to create a digital space for global solidarity and
+              accessing communal power in a small way. Light a Candle is a scream
+              into the void.
             </p>
             <p
               style={{
-                margin: '12px 0 0',
-                fontSize: '0.8rem',
+                marginTop: 12,
+                fontSize: '0.75rem',
                 color: '#555',
               }}
             >
-              Created with ❤️ by Anahat Kaur
-              <br />
+              Created with ❤️ by Anahat Kaur<br />
               2025 Berlin
             </p>
           </div>
         </div>
       )}
 
-      {/* Scrollable world */}
+      {/* Scrollable World */}
       <div
-        ref={containerRef}
-        onClick={handleScreenClick}
+        ref={worldRef}
+        onClick={handleWorldClick}
         style={{
           width: '100vw',
           height: '100vh',
           overflow: 'auto',
           background: '#fff',
           position: 'relative',
-          fontFamily: 'Noto Sans, sans-serif',
         }}
       >
         <div style={{ width: 3000, height: 2000, position: 'relative' }}>
@@ -217,19 +213,19 @@ export default function Home() {
                 e.stopPropagation();
                 openModal(i, c.id);
               }}
-              onMouseEnter={() =>
-                c.note &&
-                setHovered({
+              onMouseEnter={() => {
+                if (!c.note) return;
+                setHover({
                   visible: true,
                   x: c.x,
                   y: c.y,
                   text: c.note,
                   date: new Date(c.created_at).toLocaleString(),
                   country: c.country_code,
-                })
-              }
+                });
+              }}
               onMouseLeave={() =>
-                setHovered((h) => ({ ...h, visible: false }))
+                setHover((h) => ({ ...h, visible: false }))
               }
               style={{
                 position: 'absolute',
@@ -242,7 +238,7 @@ export default function Home() {
             >
               <img
                 src="/candle.gif"
-                alt=""
+                alt="User Candle"
                 style={{ height: 60, width: 'auto' }}
               />
               {c.country_code && (
@@ -253,37 +249,38 @@ export default function Home() {
             </div>
           ))}
 
-          {/* Tooltip */}
-          {hovered.visible && (
+          {/* Hover Tooltip */}
+          {hover.visible && (
             <div
               style={{
                 position: 'absolute',
-                left: hovered.x + 20,
-                top: hovered.y - 30,
+                left: hover.x + 20,
+                top: hover.y - 30,
                 background: '#f9f5f0',
                 color: '#5a3e2b',
                 padding: '12px 16px',
                 borderRadius: 6,
                 pointerEvents: 'none',
-                maxWidth: 200,
+                maxWidth: 220,
+                fontFamily: 'Noto Sans, sans-serif',
                 fontSize: 14,
-                lineHeight: 1.6,
+                lineHeight: 1.4,
                 boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
               }}
             >
-              <div style={{ marginBottom: 8 }}>{hovered.text}</div>
-              {hovered.country && (
-                <div style={{ fontSize: 16 }}>{flagEmoji(hovered.country)}</div>
+              <div style={{ marginBottom: 6 }}>{hover.text}</div>
+              {hover.country && (
+                <div style={{ fontSize: 16, marginBottom: 6 }}>
+                  {flagEmoji(hover.country)}
+                </div>
               )}
-              <div style={{ fontSize: 12, color: '#7f5d4b' }}>
-                {hovered.date}
-              </div>
+              <div style={{ fontSize: 12, opacity: 0.8 }}>{hover.date}</div>
             </div>
           )}
         </div>
       </div>
 
-      {/* Central candle + sunburst */}
+      {/* Central Candle (Fixed) */}
       <div
         onClick={(e) => {
           e.stopPropagation();
@@ -296,54 +293,71 @@ export default function Home() {
           transform: 'translate(-50%, -50%)',
           textAlign: 'center',
           cursor: 'pointer',
-          zIndex: 50,
+          zIndex: 500,
         }}
       >
-        {/* ... your existing sunburst + central candle code ... */}
+        {/* optional SVG sunburst here… */}
+        <img
+          src="/candle.gif"
+          alt="Main Candle"
+          style={{ height: 60, width: 'auto', zIndex: 1 }}
+        />
+        <p
+          style={{
+            marginTop: 8,
+            color: '#333',
+            fontFamily: 'Noto Sans, sans-serif',
+            fontSize: '0.95rem',
+            lineHeight: 1.4,
+            zIndex: 2,
+          }}
+        >
+          Click to light your candle,
+          <br />
+          place it anywhere in this space,
+          <br />
+          write a note or read one.
+        </p>
       </div>
 
       {/* Letter Modal */}
       {modal.open && (
         <div
+          onClick={() =>
+            setModal({ open: false, index: null, id: null, text: '', country: '' })
+          }
           style={{
             position: 'fixed',
-            top: 0,
-            left: 0,
-            width: '100vw',
-            height: '100vh',
+            inset: 0,
             background: 'rgba(0,0,0,0.4)',
-            backdropFilter: 'blur(3px)',
+            backdropFilter: 'blur(2px)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            zIndex: 200,
+            zIndex: 1000,
           }}
-          onClick={() =>
-            setModal({ open: false, index: null, id: null, text: '' })
-          }
         >
           <div
             onClick={(e) => e.stopPropagation()}
             style={{
-              position: 'relative',
               background: '#fff',
-              padding: '40px 48px',
-              borderRadius: 10,
+              borderRadius: 8,
+              padding: '32px 40px',
               width: '90%',
               maxWidth: 480,
               boxShadow: '0 6px 20px rgba(0,0,0,0.1)',
+              fontFamily: 'Noto Sans, sans-serif',
             }}
           >
+            {/* close × */}
             <button
               onClick={() =>
-                setModal({ open: false, index: null, id: null, text: '' })
+                setModal({ open: false, index: null, id: null, text: '', country: '' })
               }
               style={{
                 position: 'absolute',
                 top: 16,
                 right: 16,
-                width: 24,
-                height: 24,
                 background: 'transparent',
                 border: 'none',
                 fontSize: 20,
@@ -354,13 +368,8 @@ export default function Home() {
               &times;
             </button>
 
-            <label
-              style={{
-                display: 'block',
-                marginBottom: 12,
-                fontFamily: 'Noto Sans, sans-serif',
-              }}
-            >
+            {/* country selector */}
+            <label style={{ display: 'block', marginBottom: 16 }}>
               Your country:
               <select
                 value={modal.country}
@@ -369,50 +378,61 @@ export default function Home() {
                 }
                 style={{
                   marginLeft: 8,
-                  padding: '4px 8px',
-                  fontFamily: 'Noto Sans, sans-serif',
+                  padding: '6px 10px',
+                  fontFamily: 'inherit',
                 }}
               >
                 <option value="">— pick —</option>
-                {COUNTRIES.map((c) => (
-                  <option key={c.code} value={c.code}>
-                    {flagEmoji(c.code)} {c.name}
+                {COUNTRIES.map(({ code, name }) => (
+                  <option key={code} value={code}>
+                    {flagEmoji(code)} {name}
                   </option>
                 ))}
               </select>
             </label>
 
+            {/* letter heading */}
             <h3
               style={{
-                margin: '0 0 16px',
-                fontSize: '1.3rem',
+                margin: '0 0 12px',
                 fontWeight: 400,
-                lineHeight: 1.3,
+                fontSize: '1.2rem',
                 color: '#333',
-                fontFamily: 'Noto Sans, sans-serif',
               }}
             >
               Write your letter
             </h3>
+            <p
+              style={{
+                margin: '0 0 24px',
+                fontSize: '0.9rem',
+                color: '#555',
+              }}
+            >
+              This letter cannot be deleted once you share it.
+            </p>
+
+            {/* message textarea */}
             <textarea
+              rows={5}
+              placeholder="Your message…"
               value={modal.text}
               onChange={(e) => {
                 const t = e.target.value.slice(0, 200);
                 setModal((m) => ({ ...m, text: t }));
               }}
-              rows={4}
-              placeholder="Your message…"
               style={{
                 width: '100%',
                 padding: 12,
-                fontSize: 14,
                 border: '1px solid #eee',
                 borderRadius: 6,
-                backgroundColor: '#f9f9f9',
+                background: '#f9f9f9',
                 color: '#000',
-                resize: 'vertical',
+                fontSize: 14,
+                lineHeight: 1.5,
                 marginBottom: 16,
-                fontFamily: 'Noto Sans, sans-serif',
+                resize: 'vertical',
+                fontFamily: 'inherit',
               }}
             />
             <div
@@ -426,18 +446,18 @@ export default function Home() {
               {modal.text.length}/200
             </div>
 
+            {/* share letter */}
             <button
-              onClick={handleModalSubmit}
+              onClick={submitModal}
               style={{
                 padding: '10px 18px',
-                background: '#fff',
-                color: '#d2691e',
-                border: '1px solid #d2691e',
+                background: '#d2691e',
+                color: '#fff',
+                border: 'none',
                 borderRadius: 6,
                 cursor: 'pointer',
                 fontSize: 14,
                 float: 'right',
-                fontFamily: 'Noto Sans, sans-serif',
               }}
             >
               Share Letter
