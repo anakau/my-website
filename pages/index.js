@@ -23,7 +23,6 @@ function flagEmoji(cc) {
 export default function Home() {
   const [candles, setCandles]     = useState([])
   const [isPlacing, setIsPlacing] = useState(false)
-  const [ghost, setGhost]         = useState(null) // { x, y } while dragging
   const [modal, setModal]         = useState({
     open: false,
     index: null,
@@ -43,7 +42,7 @@ export default function Home() {
   const [showInfo, setShowInfo]   = useState(false)
   const worldRef                  = useRef(null)
 
-  // Load all candles
+  // 1) Load all candles
   useEffect(() => {
     supabase
       .from('candles')
@@ -54,7 +53,7 @@ export default function Home() {
       })
   }, [])
 
-  // Center the scrollable world
+  // 2) Center the scrollable world
   useEffect(() => {
     const el = worldRef.current
     if (!el) return
@@ -64,22 +63,11 @@ export default function Home() {
     })
   }, [])
 
-  // Global mousemove for ghost preview
-  useEffect(() => {
-    const onMove = e => {
-      if (ghost) setGhost({ x: e.clientX, y: e.clientY })
-    }
-    if (ghost) document.addEventListener('mousemove', onMove)
-    return () => document.removeEventListener('mousemove', onMove)
-  }, [ghost])
-
-  // Place a new candle
+  // 3) Place a new candle
   const handleWorldClick = async e => {
     if (!isPlacing) return
     setIsPlacing(false)
-    setGhost(null)
 
-    // calculate world coords
     const rect = worldRef.current.getBoundingClientRect()
     const worldX = e.clientX - rect.left + worldRef.current.scrollLeft
     const worldY = e.clientY - rect.top  + worldRef.current.scrollTop
@@ -92,21 +80,23 @@ export default function Home() {
 
     if (!error && data?.length) {
       const row = data[0]
-      // open modal at world coords & screen coords
-      setModal({
-        open:   true,
-        index:  oldLen,
-        id:     row.id,
-        text:   '',
-        country:'',
-        worldX,
-        worldY,
+      setCandles(prev => {
+        // open the modal right at that candle
+        setModal({
+          open: true,
+          index: oldLen,
+          id: row.id,
+          text: '',
+          country: '',
+          worldX,
+          worldY,
+        })
+        return [...prev, row]
       })
-      setCandles(prev => [...prev, row])
     }
   }
 
-  // Submit letter + flag
+  // 4) Submit letter + flag
   const submitModal = async () => {
     const { index, id, text, country } = modal
     setCandles(prev => {
@@ -119,17 +109,31 @@ export default function Home() {
       .from('candles')
       .update({ note: text, country_code: country })
       .eq('id', id)
-    setModal({ open: false, index: null, id: null, text: '', country: '', worldX:0, worldY:0 })
+    setModal({
+      open: false,
+      index: null,
+      id: null,
+      text: '',
+      country: '',
+      worldX: 0,
+      worldY: 0,
+    })
   }
 
-  // clamp a bubble rect into viewport
-  function clampPosition(x, y, width, height) {
-    const vw = window.innerWidth, vh = window.innerHeight
-    let left = x - width/2
-    if (left < 8) left = 8
-    if (left + width > vw-8) left = vw - width - 8
-    let top = y - height - 16
-    if (top < 8) top = 8
+  // Helper to compute bubble position
+  const computeBubble = () => {
+    const { worldX, worldY } = modal
+    const rect = worldRef.current.getBoundingClientRect()
+    // screen coords
+    let x = rect.left + worldX - worldRef.current.scrollLeft
+    let y = rect.top  + worldY - worldRef.current.scrollTop
+    // center bubble above candle
+    const bubbleW = 280, bubbleH = 200
+    let left = x - bubbleW / 2
+    let top  = y - bubbleH - 16
+    // clamp
+    left = Math.max(8, Math.min(left, window.innerWidth - bubbleW - 8))
+    top  = Math.max(8, Math.min(top, window.innerHeight - bubbleH - 8))
     return { left, top }
   }
 
@@ -167,17 +171,14 @@ export default function Home() {
             style={{
               position: 'absolute', top: 48, left: 12,
               width: 300, background: '#f2f2f2',
-              borderRadius: 6, padding: 16,
+              borderRadius: 8, padding: 16,
               fontFamily: 'Noto Sans, sans-serif',
               fontSize: 14, lineHeight: 1.4, color: '#333'
             }}
           >
-            <p style={{ margin: 0 }}>
-              Prolonged war, deep loss, grief, fear, hope and eternal love. I feel so much...
-            </p>
-            <p style={{ marginTop: 8, fontSize: 12, color: '#555' }}>
-              Created with ❤️ by Anahat Kaur<br/>2025 Berlin
-            </p>
+            Prolonged war, deep loss, grief, fear, hope and eternal love...
+            <br/><br/>
+            Created with ❤️ by Anahat Kaur<br/>2025 Berlin
           </div>
         </div>
       )}
@@ -189,12 +190,11 @@ export default function Home() {
         style={{
           width: '100vw', height: '100vh',
           overflow: 'auto', background: '#fff',
-          cursor: ghost ? 'none' : isPlacing ? 'crosshair' : 'default',
-          position: 'relative',
+          cursor: isPlacing ? 'crosshair' : 'default',
         }}
       >
         <div style={{ width: 3000, height: 2000, position: 'relative' }}>
-          {candles.map((c,i) => (
+          {candles.map((c, i) => (
             <div
               key={c.id}
               onMouseEnter={() => {
@@ -215,135 +215,134 @@ export default function Home() {
               }}
             >
               <img src="/candle.gif" alt="" style={{ height: 60, width: 'auto' }} />
-              <div style={{ marginTop: 2 }}>
-                {c.country_code && <span style={{ fontSize:18 }}>{flagEmoji(c.country_code)}</span>}
-              </div>
+              {/* flag under each candle, tighter spacing */}
+              {c.country_code && (
+                <div style={{ fontSize: 18, marginTop: 2 }}>
+                  {flagEmoji(c.country_code)}
+                </div>
+              )}
             </div>
           ))}
 
-          {/* Hover tooltip */}
-          {hover.visible && (() => {
-            // clamp
-            const { left, top } = clampPosition(
-              worldRef.current.getBoundingClientRect().left + hover.x,
-              worldRef.current.getBoundingClientRect().top + hover.y,
-              220,  // approx bubble width
-              80    // approx bubble height
-            )
-            return (
+          {/* hover tooltip */}
+          {hover.visible && (
+            <div
+              style={{
+                position: 'absolute',
+                left: hover.x,
+                top: hover.y - 80,
+                transform: 'translate(-50%, 0)',
+                background: '#f2f2f2',
+                color: '#5a3e2b',
+                padding: '12px 16px',
+                borderRadius: 8,
+                fontFamily: 'Noto Sans, sans-serif',
+                fontSize: 14,
+                lineHeight: 1.4,
+                zIndex: 400,
+              }}
+            >
               <div
                 style={{
-                  position: 'fixed',
-                  left, top,
-                  background: '#f2f2f2',
-                  color: '#5a3e2b',
-                  padding: '10px 14px',
-                  borderRadius: 8,
-                  fontFamily: 'Noto Sans, sans-serif',
-                  fontSize: 14,
-                  lineHeight: 1.4,
-                  zIndex: 400,
+                  position: 'absolute',
+                  bottom: -8,
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  width: 0,
+                  height: 0,
+                  borderLeft: '8px solid transparent',
+                  borderRight: '8px solid transparent',
+                  borderTop: '8px solid #f2f2f2',
                 }}
-              >
-                <div style={{ marginBottom:4 }}>{hover.text}</div>
-                <div style={{ fontSize:12, opacity:0.8 }}>{hover.date}</div>
-                <div style={{
-                  position:'absolute', bottom:-8, left:'50%',
-                  transform:'translateX(-50%)',
-                  width:0, height:0,
-                  borderLeft:'8px solid transparent',
-                  borderRight:'8px solid transparent',
-                  borderTop:'8px solid #f2f2f2'
-                }} />
-              </div>
-            )
-          })()}
+              />
+              {hover.text}
+              <br/>
+              <small style={{ opacity: 0.7 }}>{hover.date}</small>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Ghost candle preview */}
-      {ghost && (
-        <img
-          src="/candle.gif"
-          alt=""
-          style={{
-            position:'fixed',
-            left: ghost.x, top: ghost.y,
-            width: 60, height:'auto',
-            pointerEvents:'none',
-            transform:'translate(-50%,-50%)',
-            opacity:0.6,
-            zIndex: 1000
-          }}
-        />
-      )}
-
-      {/* Central candle (top layer) */}
+      {/* Central candle */}
       <div
-        onMouseDown={e => {
-          e.stopPropagation()
-          setIsPlacing(true)
-          setGhost({ x:e.clientX, y:e.clientY })
-        }}
-        onClick={e => e.stopPropagation()}
+        onClick={e => { e.stopPropagation(); setIsPlacing(true) }}
         style={{
           position: 'fixed',
-          top: '50%', left:'50%',
-          transform:'translate(-50%,-50%)',
-          textAlign:'center', zIndex:500
+          top: '50%', left: '50%',
+          transform: 'translate(-50%, -50%)',
+          textAlign: 'center', zIndex: 500,
         }}
       >
-        <img src="/candle.gif" alt="" style={{ height:60,width:'auto' }}/>
-        <p style={{
-          marginTop:8, color:'#333',
-          fontFamily:'Noto Sans, sans-serif', fontSize:15, lineHeight:1.4
-        }}>
-          Click to grab a candle
+        <img src="/candle.gif" alt="" style={{ height: 60, width: 'auto' }} />
+        <p
+          style={{
+            marginTop: 8,
+            color: '#333',
+            fontFamily: 'Noto Sans, sans-serif',
+            fontSize: 15,
+            lineHeight: 1.4
+          }}
+        >
+          Click to light your candle,<br/>
+          place it anywhere in this space,<br/>
+          write a note or read one.
         </p>
       </div>
 
       {/* Total count */}
-      <div style={{
-        position:'fixed', bottom:12,right:12,
-        background:'rgba(255,255,255,0.8)', padding:'6px 10px',
-        borderRadius:4, fontFamily:'Noto Sans, sans-serif', fontSize:14, zIndex:1000
-      }}>
+      <div
+        style={{
+          position: 'fixed', bottom: 12, right: 12,
+          background: 'rgba(255,255,255,0.8)',
+          padding: '6px 10px', borderRadius: 4,
+          fontFamily: 'Noto Sans, sans-serif', fontSize: 14,
+          zIndex: 1000
+        }}
+      >
         Total candles: {candles.length}
       </div>
 
-      {/* Letter modal bubble (at candle) */}
+      {/* Letter modal bubble */}
       {modal.open && (() => {
-        const screenRect = worldRef.current.getBoundingClientRect()
-        // compute on-screen position from world coords
-        const screenX = screenRect.left + modal.worldX - worldRef.current.scrollLeft
-        const screenY = screenRect.top  + modal.worldY - worldRef.current.scrollTop
-        // clamp
-        const { left, top } = clampPosition(screenX, screenY, 260, 300)
+        const { left, top } = computeBubble()
         return (
-          <>
+          <div>
+            {/* backdrop */}
             <div
-              onClick={() => setModal({ open:false, index:null, id:null,text:'',country:'',worldX:0,worldY:0 })}
+              onClick={() => setModal({
+                open: false, index: null, id: null,
+                text: '', country: '',
+                worldX:0, worldY:0
+              })}
               style={{ position:'fixed', inset:0, zIndex:800 }}
             />
+            {/* bubble */}
             <div
-              onClick={e=>e.stopPropagation()}
+              onClick={e => e.stopPropagation()}
               style={{
-                position:'fixed', left, top,
-                background:'#f2f2f2', borderRadius:10,
-                padding:16, maxWidth:260,
+                position:'fixed',
+                left, top,
+                width:280,
+                background:'#f2f2f2',
+                borderRadius:16,
+                padding:16,
                 fontFamily:'Noto Sans, sans-serif',
-                fontSize:14, lineHeight:1.4,
-                zIndex:900
+                fontSize:14,
+                lineHeight:1.4,
+                zIndex:801
               }}
             >
-              <div style={{
-                position:'absolute', bottom:-8, left:'50%',
-                transform:'translateX(-50%)',
-                width:0,height:0,
-                borderLeft:'8px solid transparent',
-                borderRight:'8px solid transparent',
-                borderTop:'8px solid #f2f2f2'
-              }}/>
+              <div
+                style={{
+                  position:'absolute',
+                  bottom:-8,
+                  left:'50%',
+                  transform:'translateX(-50%)',
+                  borderLeft:'8px solid transparent',
+                  borderRight:'8px solid transparent',
+                  borderTop:'8px solid #f2f2f2'
+                }}
+              />
               <h4 style={{ margin:'0 0 8px', fontWeight:400 }}>
                 Write your message (you cannot undo this)
               </h4>
@@ -351,11 +350,17 @@ export default function Home() {
                 rows={4}
                 placeholder="Your message…"
                 value={modal.text}
-                onChange={e=>setModal(m=>({...m, text:e.target.value.slice(0,200)}))}
+                onChange={e =>
+                  setModal(m => ({ ...m, text: e.target.value.slice(0,200) }))
+                }
                 style={{
-                  width:'100%',padding:8,border:'1px solid #ddd',
-                  borderRadius:4,marginBottom:12,resize:'vertical',
-                  background:'#fff',color:'#000'
+                  width:'100%',
+                  padding:8,
+                  border:'1px solid #ddd',
+                  borderRadius:4,
+                  marginBottom:12,
+                  background:'#fff',
+                  color:'#000'
                 }}
               />
               <div style={{ textAlign:'right', fontSize:12, color:'#666', marginBottom:12 }}>
@@ -363,10 +368,14 @@ export default function Home() {
               </div>
               <select
                 value={modal.country}
-                onChange={e=>setModal(m=>({...m,country:e.target.value}))}
+                onChange={e => setModal(m => ({ ...m, country: e.target.value }))}
                 style={{
-                  width:'100%',padding:6,border:'1px solid #ddd',
-                  borderRadius:4,marginBottom:12,background:'#fff'
+                  width:'100%',
+                  padding:6,
+                  border:'1px solid #ddd',
+                  borderRadius:4,
+                  marginBottom:12,
+                  background:'#fff'
                 }}
               >
                 <option value="">— Select country —</option>
@@ -379,15 +388,19 @@ export default function Home() {
               <button
                 onClick={submitModal}
                 style={{
-                  float:'right',padding:'6px 12px',
-                  background:'#d2691e',color:'#fff',
-                  border:'none',borderRadius:4,cursor:'pointer'
+                  float:'right',
+                  padding:'6px 12px',
+                  background:'#d2691e',
+                  color:'#fff',
+                  border:'none',
+                  borderRadius:4,
+                  cursor:'pointer'
                 }}
               >
                 Share Letter
               </button>
             </div>
-          </>
+          </div>
         )
       })()}
     </>
