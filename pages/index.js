@@ -122,8 +122,8 @@ export default function Home() {
           >
             <p style={{ margin: 0 }}>
               Prolonged war, deep loss, grief, fear, hope and eternal love. I feel so much every
-              day, especially given the state of affairs of the world. This attempt to create a
-              digital space for global solidarity by creating a pixel of hope and accessing
+              day, especially given the state of affairs of the world. This is an attempt to create a
+              digital space for global solidarity and accessing
               communal power in a small way. Light a Candle is a scream into the void.
             </p>
             <p style={{ margin: '12px 0 0', fontSize: '0.8rem', color: '#555' }}>
