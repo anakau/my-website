@@ -64,12 +64,11 @@ export default function Home() {
     setDragPos({ x: e.clientX, y: e.clientY })
   }
 
-  // 5) place and open modal
+  // 5) place and open modal (only clear state on success)
   const handleWorldClick = async e => {
     if (!isPlacing) return
-    setIsPlacing(false)
-    setDragPos(null)
 
+    // compute world coords
     const rect = worldRef.current.getBoundingClientRect()
     const x = e.clientX - rect.left + worldRef.current.scrollLeft
     const y = e.clientY - rect.top  + worldRef.current.scrollTop
@@ -80,7 +79,16 @@ export default function Home() {
       .insert([{ x, y, note: '', emoji: '' }])
       .select()
 
-    if (!error && data?.length) {
+    if (error) {
+      console.error('Insert failed:', error)
+      return
+    }
+
+    if (data?.length) {
+      // now clear placing state
+      setIsPlacing(false)
+      setDragPos(null)
+
       const newCandle = data[0]
       setCandles(prev => {
         setModal({
@@ -98,7 +106,7 @@ export default function Home() {
     }
   }
 
-  // 6) submit note+emoji
+  // 6) submit note + emoji
   const submitModal = async () => {
     const { index, id, text, emoji } = modal
     setCandles(prev => {
@@ -125,7 +133,7 @@ export default function Home() {
   }
 
   // 7) tooltip handlers
-  const showTooltip = c => {
+  const showTooltip = c =>
     setHover({
       visible: true,
       x: c.x,
@@ -133,12 +141,13 @@ export default function Home() {
       text: c.note,
       date: new Date(c.created_at).toLocaleString()
     })
-  }
   const hideTooltip = () => setHover(h => ({ ...h, visible: false }))
 
   return (
     <>
-      <Head><title>Light a Candle · space</title></Head>
+      <Head>
+        <title>Light a Candle · space</title>
+      </Head>
 
       {/* Info toggle */}
       <button
@@ -160,10 +169,7 @@ export default function Home() {
       {/* About pop-over */}
       {showInfo && (
         <div style={{ position:'fixed', inset:0, zIndex:900 }}>
-          <div
-            onClick={() => setShowInfo(false)}
-            style={{ position:'absolute', inset:0 }}
-          />
+          <div onClick={() => setShowInfo(false)} style={{ position:'absolute', inset:0 }}/>
           <div
             onClick={e => e.stopPropagation()}
             style={{
@@ -172,9 +178,7 @@ export default function Home() {
               borderRadius:6, padding:16,
               boxShadow:'0 2px 8px rgba(0,0,0,0.1)',
               fontFamily:'Noto Sans, sans-serif',
-              fontSize:14,
-              lineHeight:1.4,
-              color:'#333'
+              fontSize:14, lineHeight:1.4, color:'#333'
             }}
           >
             Prolonged war, deep loss, grief, fear, hope and eternal love. I feel so much every
@@ -188,7 +192,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* Scrollable world (handles both click & mousemove) */}
+      {/* Scrollable world (click & move) */}
       <div
         ref={worldRef}
         onClick={handleWorldClick}
@@ -228,16 +232,11 @@ export default function Home() {
                 position:'absolute',
                 left:hover.x, top:hover.y,
                 transform:'translate(-50%,-180%)',
-                background:'#f2f2f2',
-                color:'#5a3e2b',
-                padding:'12px 16px',
-                borderRadius:8,
-                pointerEvents:'none',
-                maxWidth:200,
+                background:'#f2f2f2', color:'#5a3e2b',
+                padding:'12px 16px', borderRadius:8,
+                pointerEvents:'none', maxWidth:200,
                 fontFamily:'Noto Sans, sans-serif',
-                fontSize:14,
-                lineHeight:1.4,
-                zIndex:400
+                fontSize:14, lineHeight:1.4, zIndex:400
               }}
             >
               <div style={{
@@ -329,25 +328,32 @@ export default function Home() {
       {/* Write-letter bubble */}
       {modal.open && (
         <>
-          <div onClick={()=>setModal({
-            open:false, index:null, id:null,
-            text:'', emoji:'', showEmojiPicker:false,
-            x:0, y:0
-          })} style={{position:'fixed', inset:0, zIndex:800}}/>
+          <div
+            onClick={() => setModal({
+              open:false, index:null, id:null,
+              text:'', emoji:'', showEmojiPicker:false,
+              x:0, y:0
+            })}
+            style={{ position:'fixed', inset:0, zIndex:800 }}
+          />
 
-          <div onClick={e=>e.stopPropagation()} style={{
-            position:'fixed',
-            left:modal.x, top:modal.y+24,
-            transform:'translate(-50%,0)',
-            background:'#f2f2f2',
-            borderRadius:12, padding:16,
-            maxWidth:300,
-            fontFamily:'Noto Sans, sans-serif',
-            fontSize:14, zIndex:810
-          }}>
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              position:'fixed',
+              left:modal.x, top:modal.y+24,
+              transform:'translate(-50%,0)',
+              background:'#f2f2f2',
+              borderRadius:12, padding:16,
+              maxWidth:300,
+              fontFamily:'Noto Sans, sans-serif',
+              fontSize:14, zIndex:810
+            }}
+          >
             {/* arrow */}
             <div style={{
-              position:'absolute', top:-10, left:'50%',
+              position:'absolute',
+              top:-10, left:'50%',
               transform:'translateX(-50%)',
               borderLeft:'8px solid transparent',
               borderRight:'8px solid transparent',
@@ -364,7 +370,7 @@ export default function Home() {
             <textarea rows={4}
               placeholder="Your message…"
               value={modal.text}
-              onChange={e=>setModal(m=>({...m, text:e.target.value.slice(0,200)}))}
+              onChange={e => setModal(m => ({ ...m, text: e.target.value.slice(0,200) }))}
               style={{
                 width:'100%', padding:8,
                 border:'1px solid #ddd', borderRadius:4,
@@ -375,24 +381,28 @@ export default function Home() {
 
             {/* emoji picker */}
             <div style={{marginBottom:12, position:'relative'}}>
-              <button onClick={()=>setModal(m=>({...m, showEmojiPicker:!m.showEmojiPicker}))}
+              <button
+                onClick={() => setModal(m => ({ ...m, showEmojiPicker: !m.showEmojiPicker }))}
                 style={{
                   padding:'6px 12px',
                   border:'1px solid #ddd',
                   borderRadius:4, background:'#fff',
                   cursor:'pointer', fontSize:18
-                }}>
-                {modal.emoji||'😊'}
+                }}
+              >
+                {modal.emoji || '😊'}
               </button>
               {modal.showEmojiPicker && (
-                <div style={{position:'absolute', top:'100%', left:0, zIndex:1001}}>
-                  <Picker onEmojiClick={(_, data)=>
-                    setModal(m=>({
-                      ...m,
-                      emoji: data.emoji,
-                      showEmojiPicker: false
-                    }))
-                  } />
+                <div style={{ position:'absolute', top:'100%', left:0, zIndex:1001 }}>
+                  <Picker
+                    onEmojiClick={(_, data) =>
+                      setModal(m => ({
+                        ...m,
+                        emoji: data.emoji,
+                        showEmojiPicker: false
+                      }))
+                    }
+                  />
                 </div>
               )}
             </div>
@@ -404,13 +414,16 @@ export default function Home() {
               {modal.text.length}/200
             </div>
 
-            <button onClick={submitModal} style={{
-              display:'block', margin:'0 auto',
-              padding:'8px 16px',
-              background:'#000', color:'#fff',
-              border:'none', borderRadius:4,
-              cursor:'pointer'
-            }}>
+            <button
+              onClick={submitModal}
+              style={{
+                display:'block', margin:'0 auto',
+                padding:'8px 16px',
+                background:'#000', color:'#fff',
+                border:'none', borderRadius:4,
+                cursor:'pointer'
+              }}
+            >
               SHARE
             </button>
           </div>
