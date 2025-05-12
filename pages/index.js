@@ -4,7 +4,7 @@ import Head from 'next/head'
 import dynamic from 'next/dynamic'
 import { supabase } from '../lib/supabaseClient'
 
-// Dynamically load the emoji picker on client only
+// Dynamically load the emoji picker in the browser only
 const Picker = dynamic(() => import('emoji-picker-react'), { ssr: false })
 
 export default function Home() {
@@ -25,7 +25,7 @@ export default function Home() {
   const [showInfo, setShowInfo]         = useState(false)
   const worldRef                        = useRef(null)
 
-  // 1) Fetch all candles on mount
+  // 1) Load all candles on mount
   useEffect(() => {
     supabase
       .from('candles')
@@ -34,7 +34,7 @@ export default function Home() {
       .then(({ data }) => data && setCandles(data))
   }, [])
 
-  // 2) Center the scrollable world
+  // 2) Center the scrollable canvas
   useEffect(() => {
     const el = worldRef.current
     if (!el) return
@@ -44,19 +44,19 @@ export default function Home() {
     })
   }, [])
 
-  // 3) Start placing mode (click central candle)
+  // 3) Click central candle → start placing
   const startPlacing = e => {
     e.stopPropagation()
     setIsPlacing(true)
   }
 
-  // 4) Ghost preview follows pointer
+  // 4) Ghost preview follows cursor
   const handleMouseMove = e => {
     if (!isPlacing) return
     setDragPos({ x: e.clientX, y: e.clientY })
   }
 
-  // 5) Place a new candle, then open the “write a letter” modal
+  // 5) Place new candle + open modal
   const handleWorldClick = async e => {
     if (!isPlacing) return
     setIsPlacing(false)
@@ -66,7 +66,7 @@ export default function Home() {
     const x = e.clientX - rect.left + worldRef.current.scrollLeft
     const y = e.clientY - rect.top  + worldRef.current.scrollTop
 
-    const beforeCount = candles.length
+    const before = candles.length
     const { data, error } = await supabase
       .from('candles')
       .insert([{ x, y, note: '', emoji: '' }])
@@ -75,10 +75,9 @@ export default function Home() {
     if (!error && data?.length) {
       const newCandle = data[0]
       setCandles(prev => {
-        // open modal on that new candle
         setModal({
           open: true,
-          index: beforeCount,
+          index: before,
           id: newCandle.id,
           text: '',
           emoji: '',
@@ -91,23 +90,20 @@ export default function Home() {
     }
   }
 
-  // 6) Submit note + emoji
+  // 6) Submit letter + emoji
   const submitModal = async () => {
     const { index, id, text, emoji } = modal
-    // optimistic UI
     setCandles(prev => {
       const cp = [...prev]
       cp[index].note  = text
       cp[index].emoji = emoji
       return cp
     })
-    // persist
     await supabase
       .from('candles')
       .update({ note: text, emoji })
       .eq('id', id)
 
-    // close modal
     setModal({
       open: false,
       index: null,
@@ -120,7 +116,7 @@ export default function Home() {
     })
   }
 
-  // 7) Hover tooltip handlers
+  // 7) Tooltip handlers
   const showTooltip = c => {
     setHover({
       visible: true,
@@ -136,7 +132,7 @@ export default function Home() {
     <>
       <Head><title>Light a Candle · space</title></Head>
 
-      {/* Info toggle --}}
+      {/* Info toggle (top-left) */}
       <button
         onClick={() => setShowInfo(v => !v)}
         style={{
@@ -152,15 +148,15 @@ export default function Home() {
         light a candle . space
       </button>
 
-      {/* About popover */}
+      {/* About pop-over */}
       {showInfo && (
         <div style={{ position:'fixed', inset:0, zIndex:900 }}>
           <div
-            onClick={()=>setShowInfo(false)}
+            onClick={() => setShowInfo(false)}
             style={{ position:'absolute', inset:0 }}
           />
           <div
-            onClick={e=>e.stopPropagation()}
+            onClick={e => e.stopPropagation()}
             style={{
               position:'absolute', top:48, left:12,
               width:300, background:'#f2f2f2',
@@ -190,10 +186,10 @@ export default function Home() {
         }}
       >
         <div style={{ width:3000, height:2000, position:'relative' }}>
-          {candles.map((c,i)=>(
+          {candles.map((c,i) => (
             <div
               key={c.id}
-              onMouseEnter={()=>c.note&&showTooltip(c)}
+              onMouseEnter={() => c.note && showTooltip(c)}
               onMouseLeave={hideTooltip}
               style={{
                 position:'absolute',
@@ -214,6 +210,7 @@ export default function Home() {
               )}
             </div>
           ))}
+
           {/* Hover tooltip */}
           {hover.visible && (
             <div
@@ -240,7 +237,7 @@ export default function Home() {
                 borderLeft:'8px solid transparent',
                 borderRight:'8px solid transparent',
                 borderTop:'10px solid #f2f2f2'
-              }}/>
+              }} />
               <div style={{ marginBottom:6 }}>{hover.text}</div>
               <div style={{ fontSize:12, opacity:0.8 }}>{hover.date}</div>
             </div>
@@ -261,20 +258,18 @@ export default function Home() {
           <svg
             viewBox="0 0 100 100"
             style={{
-              position:'absolute',
-              top:'50%', left:'50%',
+              position:'absolute', top:'50%', left:'50%',
               transform:'translate(-50%,-50%)',
-              width:140, height:140,
-              pointerEvents:'none'
+              width:140, height:140, pointerEvents:'none'
             }}
           >
-            {[...Array(24)].map((_,i)=>{
-              const angle=(i/24)*Math.PI*2
-              const inner=30, outer=inner + Math.random()*30 + 10
-              const x1=50 + Math.cos(angle)*inner
-              const y1=50 + Math.sin(angle)*inner
-              const x2=50 + Math.cos(angle)*outer
-              const y2=50 + Math.sin(angle)*outer
+            {[...Array(24)].map((_, i) => {
+              const angle = (i/24)*Math.PI*2
+              const inner = 30, outer = inner + Math.random()*30 + 10
+              const x1 = 50 + Math.cos(angle)*inner
+              const y1 = 50 + Math.sin(angle)*inner
+              const x2 = 50 + Math.cos(angle)*outer
+              const y2 = 50 + Math.sin(angle)*outer
               return (
                 <line key={i}
                   x1={x1} y1={y1} x2={x2} y2={y2}
@@ -283,15 +278,16 @@ export default function Home() {
               )
             })}
           </svg>
-          <img src="/candle.gif" alt=""
+          <img
+            src="/candle.gif"
+            alt=""
             style={{ position:'relative', height:60, width:'auto', zIndex:1 }}
           />
         </div>
         <p style={{
           marginTop:8, color:'#333',
           fontFamily:'Noto Sans, sans-serif',
-          fontSize:15, lineHeight:1.4,
-          zIndex:2
+          fontSize:15, lineHeight:1.4, zIndex:2
         }}>
           Click to light your candle,<br/>
           place it anywhere in this space,<br/>
@@ -322,16 +318,14 @@ export default function Home() {
         background:'rgba(255,255,255,0.9)',
         padding:'6px 10px', borderRadius:4,
         fontFamily:'Noto Sans, sans-serif',
-        fontSize:14, color:'#000',
-        zIndex:1000
+        fontSize:14, color:'#000', zIndex:1000
       }}>
         Total candles: {candles.length}
       </div>
 
-      {/* Write-letter bubble under the candle’s emoji */}
+      {/* Write-letter bubble */}
       {modal.open && (
         <>
-          {/* backdrop */}
           <div
             onClick={() => setModal({
               open: false, index: null, id: null,
@@ -340,15 +334,13 @@ export default function Home() {
             })}
             style={{ position:'fixed', inset:0, zIndex:800 }}
           />
-
-          {/* bubble */}
           <div
             onClick={e => e.stopPropagation()}
             style={{
               position:'fixed',
-              left: modal.x,
-              top: modal.y + 24,
-              transform:'translate(-50%, 0)',
+              left:modal.x,
+              top:modal.y + 24,
+              transform:'translate(-50%,0)',
               background:'#f2f2f2',
               borderRadius:12,
               padding:16,
@@ -358,10 +350,9 @@ export default function Home() {
               zIndex:810
             }}
           >
-            {/* little arrow */}
+            {/* Arrow */}
             <div style={{
-              position:'absolute',
-              top:-10, left:'50%',
+              position:'absolute', top:-10, left:'50%',
               transform:'translateX(-50%)',
               width:0, height:0,
               borderLeft:'8px solid transparent',
@@ -389,7 +380,7 @@ export default function Home() {
               }}
             />
 
-            {/* Emoji button + inline picker */}
+            {/* Emoji picker */}
             <div style={{ marginBottom:12, position:'relative' }}>
               <button
                 onClick={() => setModal(m => ({ ...m, showEmojiPicker: !m.showEmojiPicker }))}
@@ -406,19 +397,16 @@ export default function Home() {
               </button>
               {modal.showEmojiPicker && (
                 <div style={{
-                  position:'absolute',
-                  top:'100%',
-                  left:0,
-                  zIndex:1001
+                  position:'absolute', top:'100%', left:0, zIndex:1001
                 }}>
                   <Picker
-                    onEmojiClick={(_, data) =>
+                    onEmojiClick={(_, data) => {
                       setModal(m => ({
                         ...m,
                         emoji: data.emoji,
                         showEmojiPicker: false
                       }))
-                    }
+                    }}
                   />
                 </div>
               )}
