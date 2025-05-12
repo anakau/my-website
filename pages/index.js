@@ -4,45 +4,37 @@ import Head from 'next/head'
 import dynamic from 'next/dynamic'
 import { supabase } from '../lib/supabaseClient'
 
-// load emoji picker only in browser
+// Dynamically load the emoji picker on client only
 const Picker = dynamic(() => import('emoji-picker-react'), { ssr: false })
 
 export default function Home() {
-  const [candles, setCandles]     = useState([])
-  const [isPlacing, setIsPlacing] = useState(false)
-  const [dragPos, setDragPos]     = useState(null) // ghost preview
-  const [modal, setModal] = useState({
+  const [candles, setCandles]           = useState([])
+  const [isPlacing, setIsPlacing]       = useState(false)
+  const [dragPos, setDragPos]           = useState(null)
+  const [modal, setModal]               = useState({
     open: false,
     index: null,
     id: null,
     text: '',
     emoji: '',
+    showEmojiPicker: false,
     x: 0,
-    y: 0,
-    showEmojiPicker: false
+    y: 0
   })
-  const [hover, setHover]       = useState({
-    visible: false,
-    x: 0,
-    y: 0,
-    text: '',
-    date: ''
-  })
-  const [showInfo, setShowInfo] = useState(false)
-  const worldRef                = useRef(null)
+  const [hover, setHover]               = useState({ visible: false, x: 0, y: 0, text: '', date: '' })
+  const [showInfo, setShowInfo]         = useState(false)
+  const worldRef                        = useRef(null)
 
-  // 1) load all candles
+  // 1) Fetch all candles on mount
   useEffect(() => {
     supabase
       .from('candles')
       .select('*')
       .order('created_at', { ascending: true })
-      .then(({ data, error }) => {
-        if (!error && data) setCandles(data)
-      })
+      .then(({ data }) => data && setCandles(data))
   }, [])
 
-  // 2) center the world viewport
+  // 2) Center the scrollable world
   useEffect(() => {
     const el = worldRef.current
     if (!el) return
@@ -52,19 +44,19 @@ export default function Home() {
     })
   }, [])
 
-  // 3) begin placing mode
+  // 3) Start placing mode (click central candle)
   const startPlacing = e => {
     e.stopPropagation()
     setIsPlacing(true)
   }
 
-  // 4) ghost preview
+  // 4) Ghost preview follows pointer
   const handleMouseMove = e => {
     if (!isPlacing) return
     setDragPos({ x: e.clientX, y: e.clientY })
   }
 
-  // 5) place candle on world click
+  // 5) Place a new candle, then open the “write a letter” modal
   const handleWorldClick = async e => {
     if (!isPlacing) return
     setIsPlacing(false)
@@ -74,58 +66,61 @@ export default function Home() {
     const x = e.clientX - rect.left + worldRef.current.scrollLeft
     const y = e.clientY - rect.top  + worldRef.current.scrollTop
 
-    const idxBefore = candles.length
+    const beforeCount = candles.length
     const { data, error } = await supabase
       .from('candles')
-      .insert([{ x, y, note: '', country_code: '' }])
+      .insert([{ x, y, note: '', emoji: '' }])
       .select()
+
     if (!error && data?.length) {
-      const newRow = data[0]
+      const newCandle = data[0]
       setCandles(prev => {
+        // open modal on that new candle
         setModal({
           open: true,
-          index: idxBefore,
-          id: newRow.id,
+          index: beforeCount,
+          id: newCandle.id,
           text: '',
           emoji: '',
+          showEmojiPicker: false,
           x: e.clientX,
-          y: e.clientY,
-          showEmojiPicker: false
+          y: e.clientY
         })
-        return [...prev, newRow]
+        return [...prev, newCandle]
       })
     }
   }
 
-  // 6) submit letter + emoji
+  // 6) Submit note + emoji
   const submitModal = async () => {
     const { index, id, text, emoji } = modal
-    // optimistic UI update
+    // optimistic UI
     setCandles(prev => {
       const cp = [...prev]
-      cp[index].note         = text
-      cp[index].country_code = emoji
+      cp[index].note  = text
+      cp[index].emoji = emoji
       return cp
     })
-    // persist to Supabase
+    // persist
     await supabase
       .from('candles')
-      .update({ note: text, country_code: emoji })
+      .update({ note: text, emoji })
       .eq('id', id)
-    // reset modal
+
+    // close modal
     setModal({
       open: false,
       index: null,
       id: null,
       text: '',
       emoji: '',
+      showEmojiPicker: false,
       x: 0,
-      y: 0,
-      showEmojiPicker: false
+      y: 0
     })
   }
 
-  // 7) show hover tooltip
+  // 7) Hover tooltip handlers
   const showTooltip = c => {
     setHover({
       visible: true,
@@ -135,61 +130,44 @@ export default function Home() {
       date: new Date(c.created_at).toLocaleString()
     })
   }
-
-  // 8) hide tooltip
-  const hideTooltip = () => {
-    setHover(h => ({ ...h, visible: false }))
-  }
+  const hideTooltip = () => setHover(h => ({ ...h, visible: false }))
 
   return (
     <>
-      <Head>
-        <title>Light a Candle · space</title>
-      </Head>
+      <Head><title>Light a Candle · space</title></Head>
 
-      {/* Info toggle */}
+      {/* Info toggle --}}
       <button
         onClick={() => setShowInfo(v => !v)}
         style={{
-          position:'fixed',
-          top:12,
-          left:12,
+          position:'fixed', top:12, left:12,
           padding:'8px 12px',
-          background:'#fff',
-          color:'#d2691e',
-          border:'none',
-          textDecoration:'underline',
+          background:'#fff', color:'#d2691e',
+          border:'none', textDecoration:'underline',
           cursor:'pointer',
-          fontFamily:'Noto Sans, sans-serif',
-          fontSize:16,
+          fontFamily:'Noto Sans, sans-serif', fontSize:16,
           zIndex:1000
         }}
       >
         light a candle . space
       </button>
 
-      {/* Info popover */}
+      {/* About popover */}
       {showInfo && (
         <div style={{ position:'fixed', inset:0, zIndex:900 }}>
           <div
-            onClick={() => setShowInfo(false)}
+            onClick={()=>setShowInfo(false)}
             style={{ position:'absolute', inset:0 }}
           />
           <div
-            onClick={e => e.stopPropagation()}
+            onClick={e=>e.stopPropagation()}
             style={{
-              position:'absolute',
-              top:48,
-              left:12,
-              width:300,
-              background:'#f2f2f2',
-              borderRadius:6,
-              padding:16,
+              position:'absolute', top:48, left:12,
+              width:300, background:'#f2f2f2',
+              borderRadius:6, padding:16,
               boxShadow:'0 2px 8px rgba(0,0,0,0.1)',
               fontFamily:'Noto Sans, sans-serif',
-              fontSize:14,
-              lineHeight:1.4,
-              color:'#333'
+              fontSize:14, lineHeight:1.4, color:'#333'
             }}
           >
             Prolonged war, deep loss, grief, fear, hope and eternal love. I feel so much every day, especially given the state of affairs of the world. This is an attempt to create a digital space for global solidarity and accessing communal power in a small way. Light a Candle is a scream into the void.
@@ -206,23 +184,20 @@ export default function Home() {
         onClick={handleWorldClick}
         onMouseMove={handleMouseMove}
         style={{
-          width:'100vw',
-          height:'100vh',
-          overflow:'auto',
-          background:'#fff',
+          width:'100vw', height:'100vh',
+          overflow:'auto', background:'#fff',
           cursor:isPlacing?'crosshair':'default'
         }}
       >
         <div style={{ width:3000, height:2000, position:'relative' }}>
-          {candles.map((c, i) => (
+          {candles.map((c,i)=>(
             <div
               key={c.id}
-              onMouseEnter={() => c.note && showTooltip(c)}
+              onMouseEnter={()=>c.note&&showTooltip(c)}
               onMouseLeave={hideTooltip}
               style={{
                 position:'absolute',
-                left:c.x,
-                top:c.y,
+                left:c.x, top:c.y,
                 transform:'translate(-50%,-100%)',
                 textAlign:'center'
               }}
@@ -232,22 +207,19 @@ export default function Home() {
                 alt=""
                 style={{ height:60, width:'auto' }}
               />
-              {/* render saved emoji */}
-              {c.country_code && (
-                <div style={{ fontSize:18, marginTop:2, lineHeight:1 }}>
-                  {c.country_code}
+              {c.emoji && (
+                <div style={{ fontSize:24, marginTop:2, lineHeight:1 }}>
+                  {c.emoji}
                 </div>
               )}
             </div>
           ))}
-
           {/* Hover tooltip */}
           {hover.visible && (
             <div
               style={{
                 position:'absolute',
-                left:hover.x,
-                top:hover.y,
+                left:hover.x, top:hover.y,
                 transform:'translate(-50%,-180%)',
                 background:'#f2f2f2',
                 color:'#5a3e2b',
@@ -261,17 +233,14 @@ export default function Home() {
                 zIndex:400
               }}
             >
-              <div
-                style={{
-                  position:'absolute',
-                  bottom:-10,
-                  left:'50%',
-                  transform:'translateX(-50%)',
-                  borderLeft:'8px solid transparent',
-                  borderRight:'8px solid transparent',
-                  borderTop:'10px solid #f2f2f2'
-                }}
-              />
+              <div style={{
+                position:'absolute',
+                bottom:-10, left:'50%',
+                transform:'translateX(-50%)',
+                borderLeft:'8px solid transparent',
+                borderRight:'8px solid transparent',
+                borderTop:'10px solid #f2f2f2'
+              }}/>
               <div style={{ marginBottom:6 }}>{hover.text}</div>
               <div style={{ fontSize:12, opacity:0.8 }}>{hover.date}</div>
             </div>
@@ -283,12 +252,9 @@ export default function Home() {
       <div
         onClick={startPlacing}
         style={{
-          position:'fixed',
-          top:'50%',
-          left:'50%',
+          position:'fixed', top:'50%', left:'50%',
           transform:'translate(-50%,-50%)',
-          textAlign:'center',
-          zIndex:500
+          textAlign:'center', zIndex:500
         }}
       >
         <div style={{ position:'relative', width:60, height:60, margin:'0 auto' }}>
@@ -296,51 +262,37 @@ export default function Home() {
             viewBox="0 0 100 100"
             style={{
               position:'absolute',
-              top:'50%',
-              left:'50%',
+              top:'50%', left:'50%',
               transform:'translate(-50%,-50%)',
-              width:140,
-              height:140,
+              width:140, height:140,
               pointerEvents:'none'
             }}
           >
-            {[...Array(24)].map((_, i) => {
-              const angle = (i / 24) * Math.PI * 2
-              const inner = 30
-              const outer = inner + Math.random() * 30 + 10
-              const x1 = 50 + Math.cos(angle) * inner
-              const y1 = 50 + Math.sin(angle) * inner
-              const x2 = 50 + Math.cos(angle) * outer
-              const y2 = 50 + Math.sin(angle) * outer
+            {[...Array(24)].map((_,i)=>{
+              const angle=(i/24)*Math.PI*2
+              const inner=30, outer=inner + Math.random()*30 + 10
+              const x1=50 + Math.cos(angle)*inner
+              const y1=50 + Math.sin(angle)*inner
+              const x2=50 + Math.cos(angle)*outer
+              const y2=50 + Math.sin(angle)*outer
               return (
-                <line
-                  key={i}
-                  x1={x1}
-                  y1={y1}
-                  x2={x2}
-                  y2={y2}
-                  stroke="#ddd"
-                  strokeWidth={0.5}
+                <line key={i}
+                  x1={x1} y1={y1} x2={x2} y2={y2}
+                  stroke="#ddd" strokeWidth={0.5}
                 />
               )
             })}
           </svg>
-          <img
-            src="/candle.gif"
-            alt=""
+          <img src="/candle.gif" alt=""
             style={{ position:'relative', height:60, width:'auto', zIndex:1 }}
           />
         </div>
-        <p
-          style={{
-            marginTop:8,
-            color:'#333',
-            fontFamily:'Noto Sans, sans-serif',
-            fontSize:15,
-            lineHeight:1.4,
-            zIndex:2
-          }}
-        >
+        <p style={{
+          marginTop:8, color:'#333',
+          fontFamily:'Noto Sans, sans-serif',
+          fontSize:15, lineHeight:1.4,
+          zIndex:2
+        }}>
           Click to light your candle,<br/>
           place it anywhere in this space,<br/>
           write a note or read one.
@@ -354,11 +306,9 @@ export default function Home() {
           alt="Ghost Candle"
           style={{
             position:'fixed',
-            left:dragPos.x,
-            top:dragPos.y,
+            left:dragPos.x, top:dragPos.y,
             transform:'translate(-50%,-100%)',
-            height:60,
-            width:'auto',
+            height:60, width:'auto',
             opacity:0.6,
             pointerEvents:'none',
             zIndex:450
@@ -367,40 +317,27 @@ export default function Home() {
       )}
 
       {/* Total count */}
-      <div
-        style={{
-          position:'fixed',
-          bottom:12,
-          right:12,
-          background:'rgba(255,255,255,0.9)',
-          padding:'6px 10px',
-          borderRadius:4,
-          fontFamily:'Noto Sans, sans-serif',
-          fontSize:14,
-          color:'#000',
-          zIndex:1000
-        }}
-      >
+      <div style={{
+        position:'fixed', bottom:12, right:12,
+        background:'rgba(255,255,255,0.9)',
+        padding:'6px 10px', borderRadius:4,
+        fontFamily:'Noto Sans, sans-serif',
+        fontSize:14, color:'#000',
+        zIndex:1000
+      }}>
         Total candles: {candles.length}
       </div>
 
-      {/* Letter modal under the candle */}
+      {/* Write-letter bubble under the candle’s emoji */}
       {modal.open && (
         <>
           {/* backdrop */}
           <div
-            onClick={() =>
-              setModal({
-                open:false,
-                index:null,
-                id:null,
-                text:'',
-                emoji:'',
-                x:0,
-                y:0,
-                showEmojiPicker:false
-              })
-            }
+            onClick={() => setModal({
+              open: false, index: null, id: null,
+              text: '', emoji: '', showEmojiPicker: false,
+              x: 0, y: 0
+            })}
             style={{ position:'fixed', inset:0, zIndex:800 }}
           />
 
@@ -409,9 +346,9 @@ export default function Home() {
             onClick={e => e.stopPropagation()}
             style={{
               position:'fixed',
-              left:modal.x,
-              top:modal.y + 24,
-              transform:'translate(-50%,0)',
+              left: modal.x,
+              top: modal.y + 24,
+              transform:'translate(-50%, 0)',
               background:'#f2f2f2',
               borderRadius:12,
               padding:16,
@@ -421,20 +358,16 @@ export default function Home() {
               zIndex:810
             }}
           >
-            {/* pointer */}
-            <div
-              style={{
-                position:'absolute',
-                top:-10,
-                left:'50%',
-                transform:'translateX(-50%)',
-                width:0,
-                height:0,
-                borderLeft:'8px solid transparent',
-                borderRight:'8px solid transparent',
-                borderBottom:'10px solid #f2f2f2'
-              }}
-            />
+            {/* little arrow */}
+            <div style={{
+              position:'absolute',
+              top:-10, left:'50%',
+              transform:'translateX(-50%)',
+              width:0, height:0,
+              borderLeft:'8px solid transparent',
+              borderRight:'8px solid transparent',
+              borderBottom:'10px solid #f2f2f2'
+            }}/>
 
             <h4 style={{ margin:'0 0 8px', fontWeight:400, color:'#333' }}>
               Write a letter
@@ -442,38 +375,24 @@ export default function Home() {
             <div style={{ margin:'0 0 12px', color:'#555' }}>
               This cannot be deleted
             </div>
+
             <textarea
               rows={4}
               placeholder="Your message…"
               value={modal.text}
-              onChange={e =>
-                setModal(m => ({
-                  ...m,
-                  text: e.target.value.slice(0, 200)
-                }))
-              }
+              onChange={e => setModal(m => ({ ...m, text: e.target.value.slice(0,200) }))}
               style={{
-                width:'100%',
-                padding:8,
-                border:'1px solid #ddd',
-                borderRadius:4,
-                background:'#fff',
-                color:'#000',
-                marginBottom:12,
-                resize:'vertical'
+                width:'100%', padding:8,
+                border:'1px solid #ddd', borderRadius:4,
+                background:'#fff', color:'#000',
+                marginBottom:12, resize:'vertical'
               }}
             />
 
-            {/* emoji picker toggle */}
+            {/* Emoji button + inline picker */}
             <div style={{ marginBottom:12, position:'relative' }}>
               <button
-                type="button"
-                onClick={() =>
-                  setModal(m => ({
-                    ...m,
-                    showEmojiPicker: !m.showEmojiPicker
-                  }))
-                }
+                onClick={() => setModal(m => ({ ...m, showEmojiPicker: !m.showEmojiPicker }))}
                 style={{
                   padding:'6px 12px',
                   border:'1px solid #ddd',
@@ -485,45 +404,40 @@ export default function Home() {
               >
                 {modal.emoji || '😊'}
               </button>
-
               {modal.showEmojiPicker && (
-                <div
-                  style={{
-                    position:'fixed',
-                    left:modal.x,
-                    top:modal.y + 60,
-                    transform:'translateX(-50%)',
-                    zIndex:1001
-                  }}
-                >
+                <div style={{
+                  position:'absolute',
+                  top:'100%',
+                  left:0,
+                  zIndex:1001
+                }}>
                   <Picker
-                    onEmojiClick={(_, emojiObject) => {
+                    onEmojiClick={(_, data) =>
                       setModal(m => ({
                         ...m,
-                        emoji: emojiObject.emoji,
+                        emoji: data.emoji,
                         showEmojiPicker: false
                       }))
-                    }}
-                    height={300}
-                    width={300}
+                    }
                   />
                 </div>
               )}
             </div>
 
-            <div style={{ textAlign:'right', fontSize:12, color:'#666', marginBottom:12 }}>
+            <div style={{
+              textAlign:'right', fontSize:12,
+              color:'#666', marginBottom:12
+            }}>
               {modal.text.length}/200
             </div>
+
             <button
               onClick={submitModal}
               style={{
-                display:'block',
-                margin:'0 auto',
+                display:'block', margin:'0 auto',
                 padding:'8px 16px',
-                background:'#000',
-                color:'#fff',
-                border:'none',
-                borderRadius:4,
+                background:'#000', color:'#fff',
+                border:'none', borderRadius:4,
                 cursor:'pointer'
               }}
             >
