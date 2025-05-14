@@ -12,6 +12,7 @@ export default function Home() {
   const [candles, setCandles]     = useState([])
   const [isPlacing, setIsPlacing] = useState(false)
   const [dragPos, setDragPos]     = useState(null)
+  const [selectedStyle, setSelectedStyle] = useState(null)
   const [modal, setModal]         = useState({
     open: false,
     index: null,
@@ -54,8 +55,9 @@ export default function Home() {
   }, [])
 
   // 3) click main candle → placing mode
-  const startPlacing = e => {
+  const startPlacing = (style) => e => {
     e.stopPropagation()
+    setSelectedStyle(style)
     setIsPlacing(true)
   }
 
@@ -67,9 +69,8 @@ export default function Home() {
 
   // 5) place and open modal (only clear state on success)
   const handleWorldClick = async e => {
-    if (!isPlacing) return
+    if (!isPlacing || !selectedStyle) return
 
-    // compute world coords
     const rect = worldRef.current.getBoundingClientRect()
     const x = e.clientX - rect.left + worldRef.current.scrollLeft
     const y = e.clientY - rect.top  + worldRef.current.scrollTop
@@ -81,7 +82,8 @@ export default function Home() {
         x, 
         y, 
         note: '', 
-        emoji: '' // Explicitly initialize emoji as empty string
+        emoji: '',
+        style: selectedStyle
       }])
       .select()
 
@@ -91,9 +93,9 @@ export default function Home() {
     }
 
     if (data?.length) {
-      // now clear placing state
       setIsPlacing(false)
       setDragPos(null)
+      setSelectedStyle(null)
 
       const newCandle = data[0]
       setCandles(prev => {
@@ -171,6 +173,21 @@ export default function Home() {
       date: new Date(c.created_at).toLocaleString()
     })
   const hideTooltip = () => setHover(h => ({ ...h, visible: false }))
+
+  const getCandleStyle = (style) => {
+    switch(style) {
+      case 'tall':
+        return { height: '80px', transform: 'scale(1)' }
+      case 'wide':
+        return { height: '60px', transform: 'scale(1.3)' }
+      default:
+        return { height: '60px', transform: 'scale(1)' }
+    }
+  }
+
+  // Add debug logging
+  console.log('Selected style:', selectedStyle)
+  console.log('Candles:', candles)
 
   return (
     <>
@@ -251,7 +268,7 @@ export default function Home() {
                 src="/candle.gif" 
                 alt="" 
                 style={{ 
-                  height: 60, 
+                  ...getCandleStyle(c.style || 'regular'),
                   width: 'auto',
                   display: 'block'
                 }}
@@ -326,49 +343,175 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Central candle + sunburst */}
-      <div
-        onClick={startPlacing}
-        style={{
-          position:'fixed', top:'50%', left:'50%',
-          transform:'translate(-50%,-50%)',
-          textAlign:'center', zIndex:500
-        }}
-      >
-        <div style={{ position:'relative', width:60, height:60, margin:'0 auto' }}>
-          <svg viewBox="0 0 100 100" style={{
-            position:'absolute', top:'50%', left:'50%',
-            transform:'translate(-50%,-50%)',
-            width:140, height:140, pointerEvents:'none'
+      {/* Candle Options */}
+      <div style={{
+        position: 'fixed',
+        top: 60,
+        left: '50%',
+        transform: 'translateX(-50%)',
+        display: 'flex',
+        gap: '40px',
+        justifyContent: 'center',
+        zIndex: 500
+      }}>
+        {/* Option 1: Regular Candle */}
+        <div
+          onClick={(e) => startPlacing('regular')(e)}
+          style={{
+            textAlign: 'center',
+            cursor: 'pointer',
+            padding: '20px',
+            borderRadius: '12px',
+            transition: 'background-color 0.2s ease'
+          }}
+          onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.02)'}
+          onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+        >
+          <div style={{ position:'relative', width:60, height:60, margin:'0 auto' }}>
+            <svg viewBox="0 0 100 100" style={{
+              position:'absolute', top:'50%', left:'50%',
+              transform:'translate(-50%,-50%)',
+              width:140, height:140, pointerEvents:'none'
+            }}>
+              {[...Array(24)].map((_,i)=>{
+                const angle=(i/24)*Math.PI*2
+                const inner=30, outer=inner+Math.random()*30+10
+                const x1=50+Math.cos(angle)*inner
+                const y1=50+Math.sin(angle)*inner
+                const x2=50+Math.cos(angle)*outer
+                const y2=50+Math.sin(angle)*outer
+                return (
+                  <line key={i}
+                    x1={x1} y1={y1} x2={x2} y2={y2}
+                    stroke="#ddd" strokeWidth={0.5}
+                  />
+                )
+              })}
+            </svg>
+            <img src="/candle.gif" alt="" style={{
+              position:'relative', height:60, width:'auto', zIndex:1
+            }}/>
+          </div>
+          <p style={{
+            marginTop:8, color:'#333',
+            fontFamily:'Noto Sans, sans-serif',
+            fontSize:14, lineHeight:1.4
           }}>
-            {[...Array(24)].map((_,i)=>{
-              const angle=(i/24)*Math.PI*2
-              const inner=30, outer=inner+Math.random()*30+10
-              const x1=50+Math.cos(angle)*inner
-              const y1=50+Math.sin(angle)*inner
-              const x2=50+Math.cos(angle)*outer
-              const y2=50+Math.sin(angle)*outer
-              return (
-                <line key={i}
-                  x1={x1} y1={y1} x2={x2} y2={y2}
-                  stroke="#ddd" strokeWidth={0.5}
-                />
-              )
-            })}
-          </svg>
-          <img src="/candle.gif" alt="" style={{
-            position:'relative', height:60, width:'auto', zIndex:1
-          }}/>
+            Regular Candle
+          </p>
         </div>
-        <p style={{
-          marginTop:8, color:'#333',
-          fontFamily:'Noto Sans, sans-serif',
-          fontSize:15, lineHeight:1.4, zIndex:2
-        }}>
-          Click to light your candle,<br/>
-          place it anywhere in this space,<br/>
-          write a note or read one.
-        </p>
+
+        {/* Option 2: Tall Candle */}
+        <div
+          onClick={(e) => startPlacing('tall')(e)}
+          style={{
+            textAlign: 'center',
+            cursor: 'pointer',
+            padding: '20px',
+            borderRadius: '12px',
+            transition: 'background-color 0.2s ease'
+          }}
+          onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.02)'}
+          onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+        >
+          <div style={{ position:'relative', width:60, height:80, margin:'0 auto' }}>
+            <svg viewBox="0 0 100 100" style={{
+              position:'absolute', top:'50%', left:'50%',
+              transform:'translate(-50%,-50%)',
+              width:140, height:140, pointerEvents:'none'
+            }}>
+              {[...Array(24)].map((_,i)=>{
+                const angle=(i/24)*Math.PI*2
+                const inner=30, outer=inner+Math.random()*35+15
+                const x1=50+Math.cos(angle)*inner
+                const y1=50+Math.sin(angle)*inner
+                const x2=50+Math.cos(angle)*outer
+                const y2=50+Math.sin(angle)*outer
+                return (
+                  <line key={i}
+                    x1={x1} y1={y1} x2={x2} y2={y2}
+                    stroke="#e0c07f" strokeWidth={0.5}
+                  />
+                )
+              })}
+            </svg>
+            <img src="/candle.gif" alt="" style={{
+              position:'relative', height:80, width:'auto', zIndex:1
+            }}/>
+          </div>
+          <p style={{
+            marginTop:8, color:'#333',
+            fontFamily:'Noto Sans, sans-serif',
+            fontSize:14, lineHeight:1.4
+          }}>
+            Tall Candle
+          </p>
+        </div>
+
+        {/* Option 3: Wide Candle */}
+        <div
+          onClick={(e) => startPlacing('wide')(e)}
+          style={{
+            textAlign: 'center',
+            cursor: 'pointer',
+            padding: '20px',
+            borderRadius: '12px',
+            transition: 'background-color 0.2s ease'
+          }}
+          onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.02)'}
+          onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+        >
+          <div style={{ position:'relative', width:80, height:60, margin:'0 auto' }}>
+            <svg viewBox="0 0 100 100" style={{
+              position:'absolute', top:'50%', left:'50%',
+              transform:'translate(-50%,-50%)',
+              width:160, height:140, pointerEvents:'none'
+            }}>
+              {[...Array(24)].map((_,i)=>{
+                const angle=(i/24)*Math.PI*2
+                const inner=30, outer=inner+Math.random()*25+15
+                const x1=50+Math.cos(angle)*inner
+                const y1=50+Math.sin(angle)*inner
+                const x2=50+Math.cos(angle)*outer
+                const y2=50+Math.sin(angle)*outer
+                return (
+                  <line key={i}
+                    x1={x1} y1={y1} x2={x2} y2={y2}
+                    stroke="#ffd700" strokeWidth={0.5}
+                  />
+                )
+              })}
+            </svg>
+            <img src="/candle.gif" alt="" style={{
+              position:'relative', height:60, width:'auto', transform:'scale(1.3)', zIndex:1
+            }}/>
+          </div>
+          <p style={{
+            marginTop:8, color:'#333',
+            fontFamily:'Noto Sans, sans-serif',
+            fontSize:14, lineHeight:1.4
+          }}>
+            Wide Candle
+          </p>
+        </div>
+      </div>
+
+      {/* Instructions text */}
+      <div style={{
+        position: 'fixed',
+        top: 200,
+        left: '50%',
+        transform: 'translateX(-50%)',
+        textAlign: 'center',
+        color: '#333',
+        fontFamily: 'Noto Sans, sans-serif',
+        fontSize: 15,
+        lineHeight: 1.4,
+        zIndex: 2
+      }}>
+        Choose a candle style,<br/>
+        place it anywhere in this space,<br/>
+        write a note or read one.
       </div>
 
       {/* Ghost preview */}
@@ -378,7 +521,8 @@ export default function Home() {
             position:'fixed',
             left:dragPos.x, top:dragPos.y,
             transform:'translate(-50%,-100%)',
-            height:60, width:'auto',
+            width: 'auto',
+            ...getCandleStyle(selectedStyle || 'regular'),
             opacity:0.6,
             pointerEvents:'none',
             zIndex:450
