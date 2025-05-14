@@ -209,10 +209,8 @@ export default function Home() {
               fontSize:14, lineHeight:1.4, color:'#333'
             }}
           >
-            Prolonged war, deep loss, grief, fear, hope and eternal love. I feel so much every
-            day, especially given the state of affairs of the world. This is an attempt to create
+            War, loss, grief, fear, hope and love. This is an attempt to create
             a digital space for global solidarity and accessing communal power in a small way.
-            Light a Candle is a scream into the void.
             <div style={{ marginTop:12, fontSize:12, color:'#555' }}>
               Created with ❤️ by Anahat Kaur • 2025 Berlin
             </div>
