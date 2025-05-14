@@ -239,24 +239,37 @@ export default function Home() {
               onMouseEnter={() => c.note && showTooltip(c)}
               onMouseLeave={hideTooltip}
               style={{
-                position:'absolute',
-                left:c.x, top:c.y,
-                transform:'translate(-50%,-100%)',
-                textAlign:'center'
+                position: 'absolute',
+                left: c.x,
+                top: c.y,
+                transform: 'translate(-50%,-100%)',
+                textAlign: 'center',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '4px'
               }}
             >
-              <img src="/candle.gif" alt="" style={{ height:60, width:'auto' }}/>
+              <img 
+                src="/candle.gif" 
+                alt="" 
+                style={{ 
+                  height: 60, 
+                  width: 'auto',
+                  display: 'block'
+                }}
+              />
               <div 
                 style={{ 
-                  fontSize:24, 
-                  marginTop:2, 
-                  lineHeight:1,
-                  minHeight: '24px',
-                  // Debug styles to make sure container is visible
-                  background: 'rgba(255,255,255,0.1)'
+                  fontSize: 24,
+                  lineHeight: 1,
+                  minHeight: '28px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '2px 4px'
                 }}
               >
-                {c.emoji && console.log('Rendering emoji for candle:', c.id, c.emoji)}
                 {c.emoji}
               </div>
             </div>
@@ -266,14 +279,21 @@ export default function Home() {
           {hover.visible && (
             <div
               style={{
-                position:'absolute',
-                left:hover.x, top:hover.y,
-                transform:'translate(-50%,-180%)',
-                background:'#f2f2f2', color:'#5a3e2b',
-                padding:'12px 16px', borderRadius:8,
-                pointerEvents:'none', maxWidth:200,
-                fontFamily:'Noto Sans, sans-serif',
-                fontSize:14, lineHeight:1.4, zIndex:400
+                position: 'absolute',
+                left: hover.x,
+                top: hover.y,
+                transform: 'translate(-50%,-180%)',
+                background: '#f2f2f2',
+                color: '#5a3e2b',
+                padding: '12px 16px',
+                borderRadius: 8,
+                pointerEvents: 'none',
+                maxWidth: 240,
+                fontFamily: 'Noto Sans, sans-serif',
+                fontSize: 14,
+                lineHeight: 1.5,
+                zIndex: 400,
+                boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
               }}
             >
               <div style={{
@@ -377,14 +397,19 @@ export default function Home() {
           <div
             onClick={e => e.stopPropagation()}
             style={{
-              position:'fixed',
-              left:modal.x, top:modal.y+24,
-              transform:'translate(-50%,0)',
-              background:'#f2f2f2',
-              borderRadius:12, padding:16,
-              maxWidth:300,
-              fontFamily:'Noto Sans, sans-serif',
-              fontSize:14, zIndex:810
+              position: 'fixed',
+              left: modal.x,
+              top: modal.y + 24,
+              transform: 'translate(-50%,0)',
+              background: '#f2f2f2',
+              borderRadius: 12,
+              padding: 20,
+              maxWidth: 320,
+              width: '90vw',
+              fontFamily: 'Noto Sans, sans-serif',
+              fontSize: 14,
+              zIndex: 810,
+              boxShadow: '0 2px 12px rgba(0,0,0,0.1)'
             }}
           >
             {/* arrow */}
@@ -421,24 +446,30 @@ export default function Home() {
               <button
                 onClick={() => setModal(m => ({ ...m, showEmojiPicker: !m.showEmojiPicker }))}
                 style={{
-                  padding:'6px 12px',
-                  border:'1px solid #ddd',
-                  borderRadius:4,
-                  background:'#fff',
-                  cursor:'pointer',
-                  fontSize:18,
-                  minWidth: '50px',
+                  padding: '8px 16px',
+                  border: '1px solid #ddd',
+                  borderRadius: 4,
+                  background: '#fff',
+                  cursor: 'pointer',
+                  fontSize: 20,
+                  minWidth: '60px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  position: 'relative'
+                  gap: '8px',
+                  transition: 'all 0.2s ease',
+                  ':hover': {
+                    borderColor: '#bbb',
+                    background: '#fafafa'
+                  }
                 }}
               >
                 {modal.emoji || '😊'}
                 <span style={{ 
-                  marginLeft: '5px', 
                   fontSize: '12px', 
-                  color: '#666' 
+                  color: '#666',
+                  transform: modal.showEmojiPicker ? 'rotate(180deg)' : 'none',
+                  transition: 'transform 0.2s ease'
                 }}>
                   ▼
                 </span>
@@ -482,11 +513,20 @@ export default function Home() {
             <button
               onClick={submitModal}
               style={{
-                display:'block', margin:'0 auto',
-                padding:'8px 16px',
-                background:'#000', color:'#fff',
-                border:'none', borderRadius:4,
-                cursor:'pointer'
+                display: 'block',
+                margin: '16px auto 0',
+                padding: '10px 24px',
+                background: '#000',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 6,
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: 500,
+                transition: 'all 0.2s ease',
+                ':hover': {
+                  background: '#333'
+                }
               }}
             >
               SHARE
