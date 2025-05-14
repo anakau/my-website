@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react'
 import Head from 'next/head'
 import dynamic from 'next/dynamic'
 import { supabase } from '../lib/supabaseClient'
+import EmojiPicker from 'emoji-picker-react'
 
 // Load emoji picker only on client
 const Picker = dynamic(() => import('emoji-picker-react'), { ssr: false })
@@ -76,7 +77,12 @@ export default function Home() {
     const before = candles.length
     const { data, error } = await supabase
       .from('candles')
-      .insert([{ x, y, note: '', emoji: '' }])
+      .insert([{ 
+        x, 
+        y, 
+        note: '', 
+        emoji: '' // Explicitly initialize emoji as empty string
+      }])
       .select()
 
     if (error) {
@@ -109,27 +115,50 @@ export default function Home() {
   // 6) submit note + emoji
   const submitModal = async () => {
     const { index, id, text, emoji } = modal
-    setCandles(prev => {
-      const copy = [...prev]
-      copy[index].note  = text
-      copy[index].emoji = emoji
-      return copy
-    })
-    await supabase
-      .from('candles')
-      .update({ note: text, emoji })
-      .eq('id', id)
+    console.log('Submitting modal with:', { index, id, text, emoji })
 
-    setModal({
-      open: false,
-      index: null,
-      id: null,
-      text: '',
-      emoji: '',
-      showEmojiPicker: false,
-      x: 0,
-      y: 0
-    })
+    try {
+      const { data, error } = await supabase
+        .from('candles')
+        .update({
+          note: text,
+          emoji: emoji
+        })
+        .eq('id', id)
+        .select()
+
+      if (error) {
+        console.error('Supabase error:', error)
+        alert('Failed to save your candle')
+        return
+      }
+
+      console.log('Supabase response:', data)
+
+      setCandles(prev => {
+        const copy = [...prev]
+        copy[index] = {
+          ...copy[index],
+          note: text,
+          emoji: emoji
+        }
+        return copy
+      })
+
+      setModal({
+        open: false,
+        index: null,
+        id: null,
+        text: '',
+        emoji: '',
+        showEmojiPicker: false,
+        x: 0,
+        y: 0
+      })
+    } catch (err) {
+      console.error('Unexpected error:', err)
+      alert('An error occurred while saving')
+    }
   }
 
   // 7) tooltip handlers
@@ -217,11 +246,19 @@ export default function Home() {
               }}
             >
               <img src="/candle.gif" alt="" style={{ height:60, width:'auto' }}/>
-              {c.emoji && (
-                <div style={{ fontSize:24, marginTop:2, lineHeight:1 }}>
-                  {c.emoji}
-                </div>
-              )}
+              <div 
+                style={{ 
+                  fontSize:24, 
+                  marginTop:2, 
+                  lineHeight:1,
+                  minHeight: '24px',
+                  // Debug styles to make sure container is visible
+                  background: 'rgba(255,255,255,0.1)'
+                }}
+              >
+                {c.emoji && console.log('Rendering emoji for candle:', c.id, c.emoji)}
+                {c.emoji}
+              </div>
             </div>
           ))}
 
@@ -386,22 +423,50 @@ export default function Home() {
                 style={{
                   padding:'6px 12px',
                   border:'1px solid #ddd',
-                  borderRadius:4, background:'#fff',
-                  cursor:'pointer', fontSize:18
+                  borderRadius:4,
+                  background:'#fff',
+                  cursor:'pointer',
+                  fontSize:18,
+                  minWidth: '50px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  position: 'relative'
                 }}
               >
                 {modal.emoji || '😊'}
+                <span style={{ 
+                  marginLeft: '5px', 
+                  fontSize: '12px', 
+                  color: '#666' 
+                }}>
+                  ▼
+                </span>
               </button>
               {modal.showEmojiPicker && (
-                <div style={{ position:'absolute', top:'100%', left:0, zIndex:1001 }}>
-                  <Picker
-                    onEmojiClick={(_, data) =>
+                <div 
+                  style={{ 
+                    position:'absolute', 
+                    top:'100%', 
+                    left:0, 
+                    zIndex:1001,
+                    marginTop: '5px'
+                  }}
+                >
+                  <EmojiPicker
+                    onEmojiClick={(emojiObj) => {
+                      console.log('Emoji clicked:', emojiObj)
                       setModal(m => ({
                         ...m,
-                        emoji: data.emoji,
+                        emoji: emojiObj.emoji,
                         showEmojiPicker: false
                       }))
-                    }
+                    }}
+                    autoFocusSearch={false}
+                    width={300}
+                    height={400}
+                    lazyLoadEmojis={true}
+                    theme="light"
                   />
                 </div>
               )}
