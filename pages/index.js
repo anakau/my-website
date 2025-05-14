@@ -205,7 +205,6 @@ export default function Home() {
               position:'absolute', top:48, left:12,
               width:300, background:'#f2f2f2',
               borderRadius:6, padding:16,
-              boxShadow:'0 2px 8px rgba(0,0,0,0.1)',
               fontFamily:'Noto Sans, sans-serif',
               fontSize:14, lineHeight:1.4, color:'#333'
             }}
@@ -308,7 +307,7 @@ export default function Home() {
                 borderLeft: '8px solid transparent',
                 borderRight: '8px solid transparent',
                 borderTop: '8px solid #f2f2f2',
-                filter: 'drop-shadow(0 2px 2px rgba(0,0,0,0.1))'
+                filter: 'none'
               }}/>
               <div style={{ 
                 marginBottom: 6,
