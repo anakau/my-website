@@ -166,7 +166,7 @@ export default function Home() {
     setHover({
       visible: true,
       x: c.x,
-      y: c.y,
+      y: c.y - 100,
       text: c.note,
       date: new Date(c.created_at).toLocaleString()
     })
@@ -282,30 +282,49 @@ export default function Home() {
                 position: 'absolute',
                 left: hover.x,
                 top: hover.y,
-                transform: 'translate(-50%,-180%)',
+                transform: 'translate(-50%, -100%)',
                 background: '#f2f2f2',
                 color: '#5a3e2b',
                 padding: '12px 16px',
                 borderRadius: 8,
                 pointerEvents: 'none',
                 maxWidth: 240,
+                minWidth: 120,
                 fontFamily: 'Noto Sans, sans-serif',
                 fontSize: 14,
                 lineHeight: 1.5,
                 zIndex: 400,
-                boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
+                boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                marginBottom: 20
               }}
             >
               <div style={{
-                position:'absolute',
-                bottom:-10, left:'50%',
-                transform:'translateX(-50%)',
-                borderLeft:'8px solid transparent',
-                borderRight:'8px solid transparent',
-                borderTop:'10px solid #f2f2f2'
+                position: 'absolute',
+                bottom: -8,
+                left: '50%',
+                transform: 'translateX(-50%)',
+                width: 0,
+                height: 0,
+                borderLeft: '8px solid transparent',
+                borderRight: '8px solid transparent',
+                borderTop: '8px solid #f2f2f2',
+                filter: 'drop-shadow(0 2px 2px rgba(0,0,0,0.1))'
               }}/>
-              <div style={{ marginBottom:6 }}>{hover.text}</div>
-              <div style={{ fontSize:12, opacity:0.8 }}>{hover.date}</div>
+              <div style={{ 
+                marginBottom: 6,
+                wordBreak: 'break-word'
+              }}>
+                {hover.text}
+              </div>
+              <div style={{ 
+                fontSize: 12, 
+                opacity: 0.8,
+                borderTop: '1px solid rgba(0,0,0,0.1)',
+                paddingTop: 6,
+                marginTop: 6
+              }}>
+                {hover.date}
+              </div>
             </div>
           )}
         </div>
