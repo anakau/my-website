@@ -293,7 +293,6 @@ export default function Home() {
                 fontSize: 14,
                 lineHeight: 1.5,
                 zIndex: 400,
-                boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
                 marginBottom: 20
               }}
             >
@@ -426,8 +425,7 @@ export default function Home() {
               width: '90vw',
               fontFamily: 'Noto Sans, sans-serif',
               fontSize: 14,
-              zIndex: 810,
-              boxShadow: '0 2px 12px rgba(0,0,0,0.1)'
+              zIndex: 810
             }}
           >
             {/* arrow */}
