@@ -218,8 +218,10 @@ export default function Home() {
         style={{
           position:'fixed', top:12, left:12,
           padding:'8px 12px',
-          background:'#fff', color:'#d2691e',
-          border:'none', textDecoration:'underline',
+          background:'transparent',
+          color:'#f2f2f2',
+          border:'none',
+          textDecoration:'underline',
           cursor:'pointer',
           fontFamily:'Noto Sans, sans-serif',
           fontSize:16,
@@ -237,15 +239,17 @@ export default function Home() {
             onClick={e => e.stopPropagation()}
             style={{
               position:'absolute', top:48, left:12,
-              width:300, background:'#f2f2f2',
+              width:300, background:'#2a2a2a',
               borderRadius:6, padding:16,
               fontFamily:'Noto Sans, sans-serif',
-              fontSize:14, lineHeight:1.4, color:'#333'
+              fontSize:14, lineHeight:1.4, color:'#f2f2f2'
             }}
           >
-            War, loss, grief, fear, hope and love. This is an attempt to create
+            Prolonged war, deep loss, grief, fear, hope and eternal love. I feel so much every
+            day, especially given the state of affairs of the world. This is an attempt to create
             a digital space for global solidarity and accessing communal power in a small way.
-            <div style={{ marginTop:12, fontSize:12, color:'#555' }}>
+            Light a Candle is a scream into the void.
+            <div style={{ marginTop:12, fontSize:12, color:'#999' }}>
               Created with ❤️ by Anahat Kaur • 2025 Berlin
             </div>
           </div>
@@ -259,7 +263,7 @@ export default function Home() {
         onMouseMove={handleMouseMove}
         style={{
           width:'100vw', height:'100vh',
-          overflow:'auto', background:'#fff',
+          overflow:'auto', background:'#1a1a1a',
           cursor:isPlacing ? 'crosshair' : 'default'
         }}
       >
@@ -315,8 +319,8 @@ export default function Home() {
                 left: hover.x,
                 top: hover.y,
                 transform: 'translate(-50%, -100%)',
-                background: '#f2f2f2',
-                color: '#5a3e2b',
+                background: '#2a2a2a',
+                color: '#f2f2f2',
                 padding: '12px 16px',
                 borderRadius: 8,
                 pointerEvents: 'none',
@@ -338,7 +342,7 @@ export default function Home() {
                 height: 0,
                 borderLeft: '8px solid transparent',
                 borderRight: '8px solid transparent',
-                borderTop: '8px solid #f2f2f2',
+                borderTop: '8px solid #2a2a2a',
                 filter: 'none'
               }}/>
               <div style={{ 
@@ -349,8 +353,8 @@ export default function Home() {
               </div>
               <div style={{ 
                 fontSize: 12, 
-                opacity: 0.8,
-                borderTop: '1px solid rgba(0,0,0,0.1)',
+                opacity: 0.6,
+                borderTop: '1px solid rgba(255,255,255,0.1)',
                 paddingTop: 6,
                 marginTop: 6
               }}>
@@ -411,11 +415,11 @@ export default function Home() {
             }}/>
           </div>
           <p style={{
-            marginTop:8, color:'#333',
+            marginTop:8, color:'#f2f2f2',
             fontFamily:'Noto Sans, sans-serif',
             fontSize:14, lineHeight:1.4
           }}>
-            Regular Candle
+            Traditional Candle
           </p>
         </div>
 
@@ -458,7 +462,7 @@ export default function Home() {
             }}/>
           </div>
           <p style={{
-            marginTop:8, color:'#333',
+            marginTop:8, color:'#f2f2f2',
             fontFamily:'Noto Sans, sans-serif',
             fontSize:14, lineHeight:1.4
           }}>
@@ -505,7 +509,7 @@ export default function Home() {
             }}/>
           </div>
           <p style={{
-            marginTop:8, color:'#333',
+            marginTop:8, color:'#f2f2f2',
             fontFamily:'Noto Sans, sans-serif',
             fontSize:14, lineHeight:1.4
           }}>
@@ -521,7 +525,7 @@ export default function Home() {
         left: '50%',
         transform: 'translateX(-50%)',
         textAlign: 'center',
-        color: '#333',
+        color: '#f2f2f2',
         fontFamily: 'Noto Sans, sans-serif',
         fontSize: 15,
         lineHeight: 1.4,
@@ -555,10 +559,10 @@ export default function Home() {
       {/* Total count */}
       <div style={{
         position:'fixed', bottom:12, right:12,
-        background:'rgba(255,255,255,0.9)',
+        background:'rgba(42,42,42,0.9)',
         padding:'6px 10px', borderRadius:4,
         fontFamily:'Noto Sans, sans-serif',
-        fontSize:14, color:'#000', zIndex:1000
+        fontSize:14, color:'#f2f2f2', zIndex:1000
       }}>
         Total candles: {candles.length}
       </div>
@@ -582,7 +586,7 @@ export default function Home() {
               left: modal.x,
               top: modal.y + 24,
               transform: 'translate(-50%,0)',
-              background: '#f2f2f2',
+              background: '#2a2a2a',
               borderRadius: 12,
               padding: 20,
               maxWidth: 320,
@@ -599,13 +603,13 @@ export default function Home() {
               transform:'translateX(-50%)',
               borderLeft:'8px solid transparent',
               borderRight:'8px solid transparent',
-              borderBottom:'10px solid #f2f2f2'
+              borderBottom:'10px solid #2a2a2a'
             }}/>
 
-            <h4 style={{margin:'0 0 8px',fontWeight:400,color:'#333'}}>
+            <h4 style={{margin:'0 0 8px',fontWeight:400,color:'#f2f2f2'}}>
               Write a letter
             </h4>
-            <div style={{margin:'0 0 12px', color:'#555'}}>
+            <div style={{margin:'0 0 12px', color:'#999'}}>
               This cannot be deleted
             </div>
 
@@ -615,9 +619,12 @@ export default function Home() {
               onChange={e => setModal(m => ({ ...m, text: e.target.value.slice(0,200) }))}
               style={{
                 width:'100%', padding:8,
-                border:'1px solid #ddd', borderRadius:4,
-                background:'#fff', color:'#000',
-                marginBottom:12, resize:'vertical'
+                border:'1px solid #404040',
+                borderRadius:4,
+                background:'#1a1a1a',
+                color:'#f2f2f2',
+                marginBottom:12,
+                resize:'vertical'
               }}
             />
 
