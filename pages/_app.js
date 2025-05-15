@@ -42,8 +42,7 @@ export default function App({ Component, pageProps }) {
           zIndex: 999,
           background: 'white',
           padding: '4px',
-          borderRadius: '4px',
-          boxShadow: '0 1px 4px rgba(0,0,0,0.3)'
+          borderRadius: '4px'
         }}
       />
 

@@ -40,3 +40,113 @@ a {
     color-scheme: dark;
   }
 }
+
+/* Style the Google Translate widget */
+.goog-te-banner-frame {
+  display: none !important;
+}
+
+.goog-te-gadget {
+  font-family: 'Noto Sans', sans-serif !important;
+  color: #666 !important;
+}
+
+.goog-te-gadget-simple {
+  background-color: transparent !important;
+  border: none !important;
+  padding: 8px 12px !important;
+  border-radius: 6px !important;
+  font-size: 14px !important;
+  line-height: 1.4 !important;
+  display: inline-block;
+  transition: background-color 0.2s ease !important;
+  color: #333 !important;
+}
+
+.goog-te-gadget-simple:hover {
+  background-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+.goog-te-gadget-simple img {
+  display: none !important;
+}
+
+.goog-te-menu-value {
+  color: #333 !important;
+  text-decoration: none !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+
+.goog-te-menu-value span {
+  color: #333 !important;
+  font-family: 'Noto Sans', sans-serif !important;
+}
+
+.goog-te-menu-value span:first-child {
+  font-weight: 500 !important;
+}
+
+/* Hide unnecessary elements */
+.goog-te-gadget-simple .goog-te-menu-value span:not(:first-child) {
+  display: none !important;
+}
+
+/* Style the dropdown menu */
+.goog-te-menu2 {
+  border: 1px solid #eee !important;
+  padding: 8px !important;
+  border-radius: 8px !important;
+  background-color: #fff !important;
+  margin-top: 4px !important;
+}
+
+.goog-te-menu2-item div {
+  padding: 10px 16px !important;
+  font-family: 'Noto Sans', sans-serif !important;
+  color: #333 !important;
+  transition: all 0.2s ease !important;
+  border-radius: 4px !important;
+}
+
+.goog-te-menu2-item:hover div {
+  background-color: #f5f5f5 !important;
+}
+
+.goog-te-menu2-item-selected div {
+  background-color: #f0f0f0 !important;
+  font-weight: 500 !important;
+}
+
+/* Remove extra borders and styling */
+.goog-te-menu2 table,
+.goog-te-menu2 tbody,
+.goog-te-menu2 tr,
+.goog-te-menu2 td {
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.goog-te-menu2-colpad {
+  display: none !important;
+}
+
+/* Style scrollbar */
+.goog-te-menu2::-webkit-scrollbar {
+  width: 8px !important;
+}
+
+.goog-te-menu2::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+.goog-te-menu2::-webkit-scrollbar-thumb {
+  background-color: #ddd !important;
+  border-radius: 4px !important;
+}
+
+.goog-te-menu2::-webkit-scrollbar-thumb:hover {
+  background-color: #ccc !important;
+}
