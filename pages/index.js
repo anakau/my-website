@@ -182,11 +182,23 @@ export default function Home() {
   const getCandleStyle = (style) => {
     switch(style) {
       case 'tall':
-        return { height: '80px', transform: 'scale(1)' }
+        return { 
+          height: '80px', 
+          transform: 'scale(1)',
+          imagePath: '/lighter.gif'
+        }
       case 'wide':
-        return { height: '60px', transform: 'scale(1.3)' }
+        return { 
+          height: '60px', 
+          transform: 'scale(1.3)',
+          imagePath: '/dia.gif'
+        }
       default:
-        return { height: '60px', transform: 'scale(1)' }
+        return { 
+          height: '60px', 
+          transform: 'scale(1)',
+          imagePath: '/candle.gif'
+        }
     }
   }
 
@@ -270,11 +282,12 @@ export default function Home() {
               }}
             >
               <img 
-                src="/candle.gif" 
+                src={getCandleStyle(c.style || 'regular').imagePath}
                 alt="" 
                 style={{ 
-                  ...getCandleStyle(c.style || 'regular'),
+                  height: getCandleStyle(c.style || 'regular').height,
                   width: 'auto',
+                  transform: getCandleStyle(c.style || 'regular').transform,
                   display: 'block'
                 }}
               />
@@ -440,7 +453,7 @@ export default function Home() {
                 )
               })}
             </svg>
-            <img src="/candle.gif" alt="" style={{
+            <img src="/lighter.gif" alt="" style={{
               position:'relative', height:80, width:'auto', zIndex:1
             }}/>
           </div>
@@ -449,7 +462,7 @@ export default function Home() {
             fontFamily:'Noto Sans, sans-serif',
             fontSize:14, lineHeight:1.4
           }}>
-            Tall Candle
+            Lighter Candle
           </p>
         </div>
 
@@ -487,7 +500,7 @@ export default function Home() {
                 )
               })}
             </svg>
-            <img src="/candle.gif" alt="" style={{
+            <img src="/dia.gif" alt="" style={{
               position:'relative', height:60, width:'auto', transform:'scale(1.3)', zIndex:1
             }}/>
           </div>
@@ -496,7 +509,7 @@ export default function Home() {
             fontFamily:'Noto Sans, sans-serif',
             fontSize:14, lineHeight:1.4
           }}>
-            Wide Candle
+            Diya Candle
           </p>
         </div>
       </div>
@@ -521,13 +534,17 @@ export default function Home() {
 
       {/* Ghost preview */}
       {isPlacing && dragPos && (
-        <img src="/candle.gif" alt="Ghost"
+        <img 
+          src={getCandleStyle(selectedStyle || 'regular').imagePath}
+          alt="Ghost"
           style={{
             position:'fixed',
-            left:dragPos.x, top:dragPos.y,
+            left:dragPos.x,
+            top:dragPos.y,
             transform:'translate(-50%,-100%)',
             width: 'auto',
-            ...getCandleStyle(selectedStyle || 'regular'),
+            height: getCandleStyle(selectedStyle || 'regular').height,
+            transform: getCandleStyle(selectedStyle || 'regular').transform,
             opacity:0.6,
             pointerEvents:'none',
             zIndex:450
