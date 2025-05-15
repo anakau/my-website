@@ -193,6 +193,7 @@ export default function Home() {
           transform: 'scale(1.3)',
           imagePath: '/dia.gif'
         }
+      case 'regular':
       default:
         return { 
           height: '60px', 
@@ -411,7 +412,8 @@ export default function Home() {
               })}
             </svg>
             <img src="/candle.gif" alt="" style={{
-              position:'relative', height:60, width:'auto', zIndex:1
+              position:'relative', height:60, width:'auto', zIndex:1,
+              transform: 'scale(1)'
             }}/>
           </div>
           <p style={{
@@ -545,10 +547,9 @@ export default function Home() {
             position:'fixed',
             left:dragPos.x,
             top:dragPos.y,
-            transform:'translate(-50%,-100%)',
+            transform: `translate(-50%,-100%) ${getCandleStyle(selectedStyle || 'regular').transform}`,
             width: 'auto',
             height: getCandleStyle(selectedStyle || 'regular').height,
-            transform: getCandleStyle(selectedStyle || 'regular').transform,
             opacity:0.6,
             pointerEvents:'none',
             zIndex:450
