@@ -55,7 +55,8 @@ export default function Home() {
   }, [])
 
   // 3) click main candle → placing mode
-  const startPlacing = (style) => e => {
+  const startPlacing = (style, e) => {
+    console.log('Starting placement with style:', style)
     e.stopPropagation()
     setSelectedStyle(style)
     setIsPlacing(true)
@@ -69,11 +70,15 @@ export default function Home() {
 
   // 5) place and open modal (only clear state on success)
   const handleWorldClick = async e => {
+    console.log('World clicked. isPlacing:', isPlacing, 'selectedStyle:', selectedStyle)
     if (!isPlacing || !selectedStyle) return
 
+    // compute world coords
     const rect = worldRef.current.getBoundingClientRect()
     const x = e.clientX - rect.left + worldRef.current.scrollLeft
-    const y = e.clientY - rect.top  + worldRef.current.scrollTop
+    const y = e.clientY - rect.top + worldRef.current.scrollTop
+
+    console.log('Attempting to place candle at:', { x, y, style: selectedStyle })
 
     const before = candles.length
     const { data, error } = await supabase
@@ -356,7 +361,7 @@ export default function Home() {
       }}>
         {/* Option 1: Regular Candle */}
         <div
-          onClick={(e) => startPlacing('regular')(e)}
+          onClick={(e) => startPlacing('regular', e)}
           style={{
             textAlign: 'center',
             cursor: 'pointer',
@@ -403,7 +408,7 @@ export default function Home() {
 
         {/* Option 2: Tall Candle */}
         <div
-          onClick={(e) => startPlacing('tall')(e)}
+          onClick={(e) => startPlacing('tall', e)}
           style={{
             textAlign: 'center',
             cursor: 'pointer',
@@ -450,7 +455,7 @@ export default function Home() {
 
         {/* Option 3: Wide Candle */}
         <div
-          onClick={(e) => startPlacing('wide')(e)}
+          onClick={(e) => startPlacing('wide', e)}
           style={{
             textAlign: 'center',
             cursor: 'pointer',
